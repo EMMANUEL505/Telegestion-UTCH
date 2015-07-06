@@ -1,0 +1,36 @@
+/*
+	//***Enable RS232 interrupt*******
+	enable_interrupts(INT_RDA);
+
+	FillArray(input_buffer,100,0);  //Clear input_buffer
+	printf("AT+CPIN?\r\n");         //Verify chip
+	while(buffer_ready==0);
+	buffer_ready=0;
+	if(ValidateCommand(input_buffer,30)==1) lcd_putc("\fCMD OK");
+	else lcd_putc("\fCMD BAD");
+	delay_ms(2000);
+		
+	FillArray(input_buffer,100,0);  //Clear input_buffer
+	printf("AT+AIPDCONT=\"internet.movistar.mx\",\"movistar\",\"movistar\"\r\n");  //Configure internet
+	while(buffer_ready==0);
+	buffer_ready=0;
+	if(ValidateCommand(input_buffer,30)==1) lcd_putc("\fCMD OK");
+	else lcd_putc("\fCMD BAD");
+	delay_ms(2000);
+			
+	FillArray(input_buffer,100,0);  //Clear input_buffer
+	printf("AT+AIPA=1\r\n");        //Conect to internet
+	while(buffer_ready==0);
+	buffer_ready=0;
+	if(ValidateCommand(input_buffer,30)==1) lcd_putc("\fCMD OK");
+	else lcd_putc("\fCMD BAD");
+	delay_ms(2000);
+
+	FillArray(input_buffer,100,0);  //Clear input_buffer
+	printf("AT+AIPO=1,,\"www.telegestionutch.somee.com\",80,0,,1,2\r\n");  //Conect to server
+	while(buffer_ready==0);
+	buffer_ready=0;
+	if(ValidateCommand(input_buffer,30)==1) lcd_putc("\fCMD OK");
+	else lcd_putc("\fCMD BAD");
+	delay_ms(2000);
+*/

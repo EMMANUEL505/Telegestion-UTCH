@@ -1,0 +1,4 @@
+>>> Warning 202 "C:\Users\e882742\Documents\TELEGESTION\MICROCHIP\Config.h" Line 6(5,8): Variable never used:   rs232_errors
+>>> Warning 202 "main.c" Line 5(66,76): Variable never used:   alert_type
+      Memory usage:   ROM=20%      RAM=26% - 29%
+      0 Errors,  2 Warnings.

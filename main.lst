@@ -1,0 +1,4186 @@
+CCS PCD C Compiler, Version 4.104, 5967               06-Jul-15 13:00
+
+               Filename: C:\Users\e882742\Documents\TELEGESTION\MICROCHIP\main.lst
+
+               ROM used: 9134 bytes (20%)
+                         Largest free fragment is 35922
+               RAM used: 536 (26%) at main() level
+                         586 (29%) worst case
+               Stack:    7 locations
+
+*
+0000:  GOTO    1CC0
+.................... /******************Configuration file********************/ 
+.................... #include "Config.h" 
+.................... #include <30f5015.h> 
+.................... //////// Standard Header file for the DSPIC30F5015 device //////////////// 
+.................... #device DSPIC30F5015 
+.................... #list 
+....................  
+....................  
+.................... #device ADC=10 
+.................... #fuses FRC_PLL4, NOWRT, NOPROTECT, NOWDT, NOBROWNOUT, NOMCLR 
+.................... #use delay(clock=29480000)  
+*
+04D6:  CP0     W0
+04D8:  BTSC.B  42.1
+04DA:  BRA     4E4
+04DC:  REPEAT  #1CC3
+04DE:  NOP     
+04E0:  DEC     W0,W0
+04E2:  BRA     4D6
+04E4:  RETURN  
+.................... #use rs232(baud=115200,bits=8, xmit=PIN_F3,rcv=PIN_F2, parity=N, timeout=2000) 
+*
+07E6:  BTSS.B  20E.0
+07E8:  BRA     7E6
+07EA:  PUSH    20E
+07EC:  POP     800
+07EE:  MOV     212,W0
+07F0:  BCLR.B  20E.1
+07F2:  RETURN  
+.................... #byte OERR=0x020E 
+.................... #USE FIXED_IO(B_OUTPUTS=PIN_B2,PIN_B3,PIN_B4) 
+....................  
+....................  
+.................... #define Zebra_Mode      0 
+.................... #define Automated_Mode  1 
+.................... #define Manual_Mode     2 
+....................  
+.................... #define Lamp_On         1 
+.................... #define Lamp_Off        0 
+....................  
+.................... #define day_             0 
+.................... #define month_           1 
+.................... #define year_            2 
+.................... #define hour_            3 
+.................... #define min_             4 
+.................... #define sec_             5 
+....................  
+.................... #define RoboCable        0 
+.................... #define RoboEnergia      1 
+.................... #define LamparaFundida   2 
+....................  
+....................  
+.................... /******************Global variables***********************/ 
+.................... int operation_mode=0,lamp_status=1,lamp_statusw=1,alert_status=0,alert_type; 
+.................... int lamp1=0,lamp2=0; 
+.................... int16 i=0,Device_Id=14,loops=0; 
+....................  
+.................... float current=0,voltage=0,battery=0; 
+.................... //float nominal_c[3][2]={{0,5},{0,5},{0,5}}; 
+.................... //float nominal_v[3][2];{{0,5},{0,5},{0,5}}; 
+....................  
+.................... byte DateTime[6]={0,2,13,8,30,0}; //day=1,month=2,year=13,hour=8,minute=30,second=0 (1/feb/2013 08:30:00) 
+*
+1D04:  MOV     #200,W4
+1D06:  MOV     W4,822
+1D08:  MOV     #80D,W4
+1D0A:  MOV     W4,824
+1D0C:  MOV     #1E,W4
+1D0E:  MOV     W4,826
+.................... byte RiseTime[6]={25,2,13,19,27,0}; //day=1,month=2,year=13,hour=8,minute=30,second=0 (1/feb/2013 08:30:00) 
+1D10:  MOV     #219,W4
+1D12:  MOV     W4,828
+1D14:  MOV     #130D,W4
+1D16:  MOV     W4,82A
+1D18:  MOV     #1B,W4
+1D1A:  MOV     W4,82C
+.................... byte SetTime[6]={25,2,13,19,29,0}; //day=1,month=2,year=13,hour=8,minute=30,second=0 (1/feb/2013 08:30:00) 
+1D1C:  MOV     #219,W4
+1D1E:  MOV     W4,82E
+1D20:  MOV     #130D,W4
+1D22:  MOV     W4,830
+1D24:  MOV     #1D,W4
+1D26:  MOV     W4,832
+.................... byte dow1=0; 
+....................  
+.................... /******************Include files*************************/ 
+.................... #include "DS1302_2.c" 
+.................... ////////////////////////////////////////////////////////////////////////// 
+.................... ////                               DS1302.C                           //// 
+.................... ////                     Driver for Real Time Clock                   //// 
+.................... ////                                                                  //// 
+.................... ////  rtc_init()                                   Call after power up//// 
+.................... ////                                                                  //// 
+.................... ////  rtc_set_datetime(day,mth,year,dow,hour,min)  Set the date/time  //// 
+.................... ////                                                                  //// 
+.................... ////  rtc_get_date(day,mth,year,dow)               Get the date       //// 
+.................... ////                                                                  //// 
+.................... ////  rtc_get_time(hr,min,sec)                     Get the time       //// 
+.................... ////                                                                  //// 
+.................... ////  rtc_write_nvr(address,data)                  Write to NVR       //// 
+.................... ////                                                                  //// 
+.................... ////  data = rtc_read_nvr(address)                 Read from NVR      //// 
+.................... ////                                                                  //// 
+.................... ////  get_bcd(data)                              Convert data to BCD  //// 
+.................... ////                                                                  //// 
+.................... ////  rm_bcd(data)                               Convert data to int  //// 
+.................... ////                                                                  //// 
+.................... ////////////////////////////////////////////////////////////////////////// 
+.................... ////        (C) Copyright 1996,2003 Custom Computer Services          //// 
+.................... //// This source code may only be used by licensed users of the CCS C //// 
+.................... //// compiler.  This source code may only be distributed to other     //// 
+.................... //// licensed users of the CCS C compiler.  No other use, reproduction//// 
+.................... //// or distribution is permitted without written permission.         //// 
+.................... //// Derivative programs created using this software in object code   //// 
+.................... //// form are not restricted in any way.                              //// 
+.................... ////////////////////////////////////////////////////////////////////////// 
+....................  
+.................... #ifndef RTC_SCLK 
+....................  
+.................... #define RTC_SCLK PIN_D5 
+.................... #define RTC_IO   PIN_D6 
+.................... #define RTC_RST  PIN_D4 
+....................  
+.................... #endif 
+....................  
+.................... void write_ds1302_byte(BYTE cmd) { 
+....................    BYTE i; 
+....................  
+....................    for(i=0;i<=7;++i) { 
+*
+0684:  CLR.B   9A9
+0686:  MOV     9A8,W4
+0688:  LSR     W4,#8,W4
+068A:  CP.B    W4L,#7
+068C:  BRA     GTU,6A8
+....................       output_bit(RTC_IO, shift_right(&cmd,1,0) ); 
+068E:  BCLR.B  42.0
+0690:  RRC.B   9A8
+0692:  BRA     C,698
+0694:  BCLR.B  2D6.6
+0696:  BRA     69A
+0698:  BSET.B  2D6.6
+069A:  BCLR.B  2D2.6
+....................       output_high(RTC_SCLK); 
+069C:  BCLR.B  2D2.5
+069E:  BSET.B  2D6.5
+....................       output_low(RTC_SCLK); 
+06A0:  BCLR.B  2D2.5
+06A2:  BCLR.B  2D6.5
+....................    } 
+06A4:  INC.B   09A9
+06A6:  BRA     686
+.................... } 
+06A8:  RETURN  
+....................  
+.................... void write_ds1302(BYTE cmd, BYTE data) { 
+....................  
+....................    output_high(RTC_RST); 
+06AA:  BCLR.B  2D2.4
+06AC:  BSET.B  2D6.4
+....................    write_ds1302_byte(cmd); 
+06AE:  MOV.B   9A4,W0L
+06B0:  MOV.B   W0L,9A8
+06B2:  CALL    684
+....................    write_ds1302_byte(data); 
+06B6:  MOV.B   9A5,W0L
+06B8:  MOV.B   W0L,9A8
+06BA:  CALL    684
+....................    output_low(RTC_RST); 
+06BE:  BCLR.B  2D2.4
+06C0:  BCLR.B  2D6.4
+.................... } 
+06C2:  RETURN  
+....................  
+.................... BYTE read_ds1302(BYTE cmd) { 
+....................    BYTE i,data; 
+....................  
+....................    output_high(RTC_RST); 
+06C4:  BCLR.B  2D2.4
+06C6:  BSET.B  2D6.4
+....................    write_ds1302_byte(cmd); 
+06C8:  MOV.B   99A,W0L
+06CA:  MOV.B   W0L,9A8
+06CC:  CALL    684
+....................     
+....................    input(RTC_IO); 
+06D0:  BSET.B  2D2.6
+....................    delay_us(1); 
+06D2:  REPEAT  #5
+06D4:  NOP     
+....................           
+....................    for(i=0;i<=7;++i) { 
+06D6:  CLR.B   99B
+06D8:  MOV     99A,W4
+06DA:  LSR     W4,#8,W4
+06DC:  CP.B    W4L,#7
+06DE:  BRA     GTU,702
+....................       shift_right(&data,1,input(RTC_IO)); 
+06E0:  BSET.B  2D2.6
+06E2:  BTSC.B  2D4.6
+06E4:  BRA     6EA
+06E6:  BCLR.B  42.0
+06E8:  BRA     6EC
+06EA:  BSET.B  42.0
+06EC:  RRC.B   99C
+....................       output_high(RTC_SCLK); 
+06EE:  BCLR.B  2D2.5
+06F0:  BSET.B  2D6.5
+....................       delay_us(2); 
+06F2:  REPEAT  #C
+06F4:  NOP     
+....................       output_low(RTC_SCLK); 
+06F6:  BCLR.B  2D2.5
+06F8:  BCLR.B  2D6.5
+....................       delay_us(2); 
+06FA:  REPEAT  #C
+06FC:  NOP     
+....................    } 
+06FE:  INC.B   099B
+0700:  BRA     6D8
+....................    output_low(RTC_RST); 
+0702:  BCLR.B  2D2.4
+0704:  BCLR.B  2D6.4
+....................  
+....................    return(data); 
+0706:  MOV.B   99C,W0L
+0708:  MOV.B   W0L,0
+.................... } 
+070A:  RETURN  
+....................  
+.................... void rtc_init() { 
+070C:  MOV     W5,[W15++]
+....................    BYTE x; 
+....................    output_low(RTC_RST); 
+070E:  BCLR.B  2D2.4
+0710:  BCLR.B  2D6.4
+....................    delay_us(2); 
+0712:  REPEAT  #C
+0714:  NOP     
+....................    output_low(RTC_SCLK); 
+0716:  BCLR.B  2D2.5
+0718:  BCLR.B  2D6.5
+....................    write_ds1302(0x8e,0); 
+071A:  MOV.B   #8E,W0L
+071C:  MOV.B   W0L,9A4
+071E:  CLR.B   9A5
+0720:  CALL    6AA
+....................    write_ds1302(0x90,0xa4); 
+0724:  MOV.B   #90,W0L
+0726:  MOV.B   W0L,9A4
+0728:  MOV.B   #A4,W0L
+072A:  MOV.B   W0L,9A5
+072C:  CALL    6AA
+....................    x=read_ds1302(0x81); 
+0730:  MOV.B   #81,W0L
+0732:  MOV.B   W0L,99A
+0734:  CALL    6C4
+0738:  MOV.B   W0L,996
+....................    if((x & 0x80)!=0) 
+073A:  MOV.B   996,W0L
+073C:  AND.B   #80,W0L
+073E:  CP0.B   W0L
+0740:  BRA     Z,74C
+....................      write_ds1302(0x80,0); 
+0742:  MOV.B   #80,W0L
+0744:  MOV.B   W0L,9A4
+0746:  CLR.B   9A5
+0748:  CALL    6AA
+.................... } 
+074C:  MOV     [--W15],W5
+074E:  RETURN  
+....................  
+.................... byte get_bcd(BYTE data) 
+.................... { 
+*
+0DF2:  MOV     W5,[W15++]
+....................    byte nibh; 
+....................    byte nibl; 
+....................  
+....................    nibh=data/10; 
+0DF4:  MOV     9A2,W4
+0DF6:  CLR.B   9
+0DF8:  MOV     #A,W3
+0DFA:  REPEAT  #11
+0DFC:  DIV.U   W4,W3
+0DFE:  MOV.B   W0L,9A3
+....................    nibl=data-(nibh*10); 
+0E00:  MOV     9A2,W4
+0E02:  LSR     W4,#8,W4
+0E04:  MUL.UU  W4,#A,W0
+0E06:  MOV     9A2,W4
+0E08:  SUB.B   W4L,W0L,W0L
+0E0A:  MOV.B   W0L,9A4
+....................  
+....................    return((nibh<<4)|nibl); 
+0E0C:  MOV.B   9A3,W0L
+0E0E:  SL      W0,#4,W0
+0E10:  IOR.B   9A4,W0L
+.................... } 
+0E12:  MOV     [--W15],W5
+0E14:  RETURN  
+....................  
+.................... byte rm_bcd(BYTE data) 
+.................... { 
+*
+14DA:  MOV     W5,[W15++]
+....................    byte i; 
+....................  
+....................    i=data; 
+14DC:  MOV.B   99C,W0L
+14DE:  MOV.B   W0L,99D
+....................    data=(i>>4)*10; 
+14E0:  MOV.B   99D,W0L
+14E2:  CLR.B   1
+14E4:  LSR     W0,#4,W0
+14E6:  MOV.B   W0L,W4L
+14E8:  CLR.B   9
+14EA:  MUL.UU  W4,#A,W0
+14EC:  MOV.B   W0L,99C
+....................    data=data+(i<<4>>4); 
+14EE:  MOV.B   99D,W0L
+14F0:  SL      W0,#4,W0
+14F2:  CLR.B   1
+14F4:  LSR     W0,#4,W0
+14F6:  ADD.B   99C
+....................  
+....................    return data; 
+14F8:  MOV.B   99C,W0L
+14FA:  MOV.B   W0L,0
+.................... } 
+14FC:  MOV     [--W15],W5
+14FE:  RETURN  
+....................  
+.................... void rtc_set_datetime(BYTE day, BYTE mth, BYTE year, BYTE dow, BYTE hr, BYTE min) { 
+*
+0E16:  MOV     W5,[W15++]
+....................  
+....................    write_ds1302(0x86,get_bcd(day)); 
+0E18:  MOV.B   996,W0L
+0E1A:  MOV.B   W0L,9A2
+0E1C:  CALL    DF2
+0E20:  MOV.B   W0L,W5L
+0E22:  MOV.B   #86,W0L
+0E24:  MOV.B   W0L,9A4
+0E26:  MOV.B   W5L,W0L
+0E28:  MOV.B   W0L,9A5
+0E2A:  CALL    6AA
+....................    write_ds1302(0x88,get_bcd(mth)); 
+0E2E:  MOV.B   997,W0L
+0E30:  MOV.B   W0L,9A2
+0E32:  CALL    DF2
+0E36:  MOV.B   W0L,W5L
+0E38:  MOV.B   #88,W0L
+0E3A:  MOV.B   W0L,9A4
+0E3C:  MOV.B   W5L,W0L
+0E3E:  MOV.B   W0L,9A5
+0E40:  CALL    6AA
+....................    write_ds1302(0x8c,get_bcd(year)); 
+0E44:  MOV.B   998,W0L
+0E46:  MOV.B   W0L,9A2
+0E48:  CALL    DF2
+0E4C:  MOV.B   W0L,W5L
+0E4E:  MOV.B   #8C,W0L
+0E50:  MOV.B   W0L,9A4
+0E52:  MOV.B   W5L,W0L
+0E54:  MOV.B   W0L,9A5
+0E56:  CALL    6AA
+....................    write_ds1302(0x8a,get_bcd(dow)); 
+0E5A:  MOV.B   999,W0L
+0E5C:  MOV.B   W0L,9A2
+0E5E:  CALL    DF2
+0E62:  MOV.B   W0L,W5L
+0E64:  MOV.B   #8A,W0L
+0E66:  MOV.B   W0L,9A4
+0E68:  MOV.B   W5L,W0L
+0E6A:  MOV.B   W0L,9A5
+0E6C:  CALL    6AA
+....................    write_ds1302(0x84,get_bcd(hr)); 
+0E70:  MOV.B   99A,W0L
+0E72:  MOV.B   W0L,9A2
+0E74:  CALL    DF2
+0E78:  MOV.B   W0L,W5L
+0E7A:  MOV.B   #84,W0L
+0E7C:  MOV.B   W0L,9A4
+0E7E:  MOV.B   W5L,W0L
+0E80:  MOV.B   W0L,9A5
+0E82:  CALL    6AA
+....................    write_ds1302(0x82,get_bcd(min)); 
+0E86:  MOV.B   99B,W0L
+0E88:  MOV.B   W0L,9A2
+0E8A:  CALL    DF2
+0E8E:  MOV.B   W0L,W5L
+0E90:  MOV.B   #82,W0L
+0E92:  MOV.B   W0L,9A4
+0E94:  MOV.B   W5L,W0L
+0E96:  MOV.B   W0L,9A5
+0E98:  CALL    6AA
+....................    write_ds1302(0x80,get_bcd(0)); 
+0E9C:  CLR.B   9A2
+0E9E:  CALL    DF2
+0EA2:  MOV.B   W0L,W5L
+0EA4:  MOV.B   #80,W0L
+0EA6:  MOV.B   W0L,9A4
+0EA8:  MOV.B   W5L,W0L
+0EAA:  MOV.B   W0L,9A5
+0EAC:  CALL    6AA
+.................... } 
+0EB0:  MOV     [--W15],W5
+0EB2:  RETURN  
+....................  
+.................... void rtc_get_date(BYTE& day, BYTE& mth, BYTE& year, BYTE& dow) { 
+....................    day = rm_bcd(read_ds1302(0x87)); 
+*
+2126:  MOV.B   #87,W0L
+2128:  MOV.B   W0L,99A
+212A:  CALL    6C4
+212E:  MOV.B   W0L,W5L
+2130:  PUSH    99C
+2132:  MOV.B   W5L,[W15-#2]
+2134:  POP     99C
+2136:  CALL    14DA
+213A:  MOV.B   W0L,822
+....................    mth = rm_bcd(read_ds1302(0x89)); 
+213C:  MOV.B   #89,W0L
+213E:  MOV.B   W0L,99A
+2140:  CALL    6C4
+2144:  MOV.B   W0L,W5L
+2146:  PUSH    99C
+2148:  MOV.B   W5L,[W15-#2]
+214A:  POP     99C
+214C:  CALL    14DA
+2150:  MOV.B   W0L,823
+....................    year = rm_bcd(read_ds1302(0x8d)); 
+2152:  MOV.B   #8D,W0L
+2154:  MOV.B   W0L,99A
+2156:  CALL    6C4
+215A:  MOV.B   W0L,W5L
+215C:  PUSH    99C
+215E:  MOV.B   W5L,[W15-#2]
+2160:  POP     99C
+2162:  CALL    14DA
+2166:  MOV.B   W0L,824
+....................    dow = rm_bcd(read_ds1302(0x8b)); 
+2168:  MOV.B   #8B,W0L
+216A:  MOV.B   W0L,99A
+216C:  CALL    6C4
+2170:  MOV.B   W0L,W5L
+2172:  PUSH    99C
+2174:  MOV.B   W5L,[W15-#2]
+2176:  POP     99C
+2178:  CALL    14DA
+217C:  MOV.B   W0L,834
+.................... } 
+....................  
+.................... void rtc_get_time(BYTE& hr, BYTE& min, BYTE& sec) { 
+....................    hr = rm_bcd(read_ds1302(0x85)); 
+217E:  MOV.B   #85,W0L
+2180:  MOV.B   W0L,99A
+2182:  CALL    6C4
+2186:  MOV.B   W0L,W5L
+2188:  PUSH    99C
+218A:  MOV.B   W5L,[W15-#2]
+218C:  POP     99C
+218E:  CALL    14DA
+2192:  MOV.B   W0L,825
+....................    min = rm_bcd(read_ds1302(0x83)); 
+2194:  MOV.B   #83,W0L
+2196:  MOV.B   W0L,99A
+2198:  CALL    6C4
+219C:  MOV.B   W0L,W5L
+219E:  PUSH    99C
+21A0:  MOV.B   W5L,[W15-#2]
+21A2:  POP     99C
+21A4:  CALL    14DA
+21A8:  MOV.B   W0L,826
+....................    sec = rm_bcd(read_ds1302(0x81)); 
+21AA:  MOV.B   #81,W0L
+21AC:  MOV.B   W0L,99A
+21AE:  CALL    6C4
+21B2:  MOV.B   W0L,W5L
+21B4:  PUSH    99C
+21B6:  MOV.B   W5L,[W15-#2]
+21B8:  POP     99C
+21BA:  CALL    14DA
+21BE:  MOV.B   W0L,827
+.................... } 
+....................  
+.................... void rtc_write_nvr(BYTE address, BYTE data) { 
+....................    write_ds1302(address|0xc0,data); 
+.................... } 
+....................  
+.................... BYTE rtc_read_nvr(BYTE address) { 
+....................     return(read_ds1302(address|0xc1)); 
+.................... } 
+....................  
+.................... #include "SerialCommWiFly.c" 
+.................... #define CMD_SIZE 3 
+.................... #define SET_CMD 1 
+.................... #define SET_STR "SET" 
+....................  
+.................... #define READ_CMD 0 
+.................... #define READ_STR "RAD" 
+....................  
+.................... #define DAC 2 
+.................... #define DAC_STR "DAC" 
+....................  
+.................... #define GPO 3 
+.................... #define GPO_STR "GPO" 
+....................  
+.................... #define TIM 4 
+.................... #define TIM_STR "TIM" 
+....................  
+.................... #define LCD 5 
+.................... #define LCD_STR "LCD" 
+....................  
+.................... #define BUZ 6 
+.................... #define BUZ_STR "BUZ" 
+....................  
+.................... #define SER 7 
+.................... #define SER_STR "SER" 
+....................  
+....................  
+.................... #define ADC 8 
+.................... #define ADC_STR "ADC" 
+....................  
+.................... #define GPI 9 
+.................... #define GPI_STR "GPI" 
+....................  
+.................... #define TEM 10 
+.................... #define TEM_STR "TEM" 
+....................  
+.................... float HEX_StringToNumber(char *HexString,int Size); 
+.................... int Module_Type(char *ModStr); 
+.................... int CMD_Type(char *CMDStr); 
+....................  
+.................... int Module_Type(char *ModStr) 
+.................... { 
+....................    int ModType=-1; 
+....................    char DAC_S[4]={DAC_STR}; 
+....................    char GPO_S[4]={GPO_STR}; 
+....................    char TIM_S[4]={TIM_STR}; 
+....................    char LCD_S[4]={LCD_STR}; 
+....................    char BUZ_S[4]={BUZ_STR}; 
+....................    char SER_S[4]={SER_STR}; 
+....................    char TEM_S[4]={TEM_STR}; 
+....................  
+....................    char ADC_S[4]={ADC_STR}; 
+....................    char GPI_S[4]={GPI_STR}; 
+....................  
+....................    if(*ModStr==DAC_S[0]&& *(ModStr+1)==DAC_S[1]&& *(ModStr+2)==DAC_S[2]) ModType=DAC; 
+....................    if(*ModStr==GPO_S[0]&& *(ModStr+1)==GPO_S[1]&& *(ModStr+2)==GPO_S[2]) ModType=GPO; 
+....................    if(*ModStr==TIM_S[0]&& *(ModStr+1)==TIM_S[1]&& *(ModStr+2)==TIM_S[2]) ModType=TIM; 
+....................    if(*ModStr==LCD_S[0]&& *(ModStr+1)==LCD_S[1]&& *(ModStr+2)==LCD_S[2]) ModType=LCD; 
+....................    if(*ModStr==BUZ_S[0]&& *(ModStr+1)==BUZ_S[1]&& *(ModStr+2)==BUZ_S[2]) ModType=BUZ; 
+....................    if(*ModStr==SER_S[0]&& *(ModStr+1)==SER_S[1]&& *(ModStr+2)==SER_S[2]) ModType=SER; 
+....................    if(*ModStr==TEM_S[0]&& *(ModStr+1)==TEM_S[1]&& *(ModStr+2)==TEM_S[2]) ModType=TEM; 
+....................  
+....................    if(*ModStr==ADC_S[0]&& *(ModStr+1)==ADC_S[1]&& *(ModStr+2)==ADC_S[2]) ModType=ADC;  
+....................    if(*ModStr==GPI_S[0]&& *(ModStr+1)==GPI_S[1]&& *(ModStr+2)==GPI_S[2]) ModType=GPI; 
+....................  
+....................    return ModType; 
+.................... } 
+....................  
+.................... int CMD_Type(char *CMDStr) 
+.................... { 
+....................    int CmdType=-1; 
+....................    char CMD_S[4]={SET_STR}; 
+....................    char CMD_R[4]={READ_STR}; 
+....................    if(*CMDStr==CMD_S[0]&& *(CMDStr+1)==CMD_S[1]&& *(CMDStr+2)==CMD_S[2]) CmdType=SET_CMD; 
+....................    if(*CMDStr==CMD_R[0]&& *(CMDStr+1)==CMD_R[1]&& *(CMDStr+2)==CMD_R[2]) CmdType=READ_CMD; 
+....................    return CmdType; 
+.................... } 
+.................... float HEX_StringToNumber(char *HexString,int Size) 
+.................... { 
+....................    long counter=0,pow=16; 
+....................    char numeric[10]; 
+....................    float ReturnNumber=0; 
+....................     
+....................    for(counter=0;counter<Size;counter++) 
+....................       { 
+....................          numeric[counter]=*HexString; 
+....................          if(numeric[counter]<58) numeric[counter]-=48; 
+....................          if(numeric[counter]>58) numeric[counter]-=55; 
+....................          HexString+=1; 
+....................       } 
+....................    ReturnNumber+=(float)(numeric[Size-1]);   
+....................    if(Size>1) 
+....................    {    
+....................       for(counter=2;counter<(Size+1);counter++) 
+....................          { 
+....................             ReturnNumber+=(float)((float)(numeric[Size-counter])*pow); 
+....................             pow*=16; 
+....................          }         
+....................    }   
+....................    return ReturnNumber; 
+.................... } 
+....................  
+.................... #include "mcp4921_DSPIC.c" 
+.................... //////////////// Driver for MCP4921 D/A Converter /////////////////////// 
+.................... ////                                                                 //// 
+.................... ////  init_dac()    Call this before using a MCP4921 DAC             //// 
+.................... ////                                                                 //// 
+.................... ////  write_dac( long int )   Writes command and 12 bit resolution   //// 
+.................... ////                          to the MCP4921 which converts it to a  //// 
+.................... ////                          voltage                                //// 
+.................... ////                          0-4095 input represents 0-vref V out.  //// 
+.................... ////                                                                 //// 
+.................... ///////////////////////////////////////////////////////////////////////// 
+.................... ////        (C) Copyright 1996,2003 Custom Computer Services         //// 
+.................... //// This source code may only be used by licensed users of the CCS  //// 
+.................... //// C compiler.  This source code may only be distributed to other  //// 
+.................... //// licensed users of the CCS C compiler.  No other use,            //// 
+.................... //// reproduction or distribution is permitted without written       //// 
+.................... //// permission.  Derivative programs created using this software    //// 
+.................... //// in object code form are not restricted in any way.              //// 
+.................... ///////////////////////////////////////////////////////////////////////// 
+....................  
+.................... #ifndef EEPROM_SELECT 
+....................  
+.................... #define DAC_CS     PIN_E0 
+.................... #define DAC_CLK    PIN_E1 
+.................... #define DAC_DI     PIN_E2 
+.................... #define DAC_LDAC   PIN_E3 
+....................  
+.................... #endif 
+....................  
+.................... void init_dac() 
+.................... { 
+....................    output_high(DAC_CS); 
+....................    output_high(DAC_LDAC); 
+....................    output_high(DAC_CLK); 
+....................    output_high(DAC_DI); 
+.................... } 
+....................  
+.................... void write_dac(int16 data) { 
+....................    BYTE cmd[3]; 
+....................    BYTE i; 
+....................  
+....................    cmd[0]=data; 
+....................    cmd[1]=(data>>8); 
+....................    cmd[2]=0x03;                            
+....................     
+....................    output_high(DAC_LDAC); 
+....................    output_low(DAC_CLK); 
+....................    output_low(DAC_CS); 
+....................  
+....................    for(i=0; i<=23; ++i) 
+....................    { 
+....................       if(i<4 || (i>7 && i<12)) 
+....................          shift_left(cmd,3,0); 
+....................       else 
+....................       { 
+....................          output_bit(DAC_DI, shift_left(cmd,3,0)); 
+....................  
+....................          output_high(DAC_CLK); 
+....................          output_low(DAC_CLK); 
+....................       } 
+....................    } 
+....................    output_high(DAC_CS); 
+....................  
+....................    output_low(DAC_LDAC); 
+....................    delay_us(10); 
+....................     
+....................    output_HIGH(DAC_LDAC); 
+.................... } 
+....................  
+.................... #include "lcd_2.c" 
+.................... /////////////////////////////////////////////////////////////////////////////// 
+.................... ////                             LCD.C                                     //// 
+.................... ////                 Driver for common LCD modules                         //// 
+.................... ////                                                                       //// 
+.................... ////  lcd_init()   Must be called before any other function.               //// 
+.................... ////                                                                       //// 
+.................... ////  lcd_putc(c)  Will display c on the next position of the LCD.         //// 
+.................... ////                     The following have special meaning:               //// 
+.................... ////                      \f  Clear display                                //// 
+.................... ////                      \n  Go to start of second line                   //// 
+.................... ////                      \b  Move back one position                       //// 
+.................... ////                                                                       //// 
+.................... ////  lcd_gotoxy(x,y) Set write position on LCD (upper left is 1,1)        //// 
+.................... ////                                                                       //// 
+.................... ////  lcd_getc(x,y)   Returns character at position x,y on LCD             //// 
+.................... ////                                                                       //// 
+.................... ////  CONFIGURATION                                                        //// 
+.................... ////  The LCD can be configured in one of two ways: a.) port access or     //// 
+.................... ////  b.) pin access.  Port access requires the entire 7 bit interface     //// 
+.................... ////  connected to one GPIO port, and the data bits (D4:D7 of the LCD)     //// 
+.................... ////  connected to sequential pins on the GPIO.  Pin access                //// 
+.................... ////  has no requirements, all 7 bits of the control interface can         //// 
+.................... ////  can be connected to any GPIO using several ports.                    //// 
+.................... ////                                                                       //// 
+.................... ////  To use port access, #define LCD_DATA_PORT to the SFR location of     //// 
+.................... ////  of the GPIO port that holds the interface, -AND- edit LCD_PIN_MAP    //// 
+.................... ////  of this file to configure the pin order.  If you are using a         //// 
+.................... ////  baseline PIC (PCB), then LCD_OUTPUT_MAP and LCD_INPUT_MAP also must  //// 
+.................... ////  be defined.                                                          //// 
+.................... ////                                                                       //// 
+.................... ////  Example of port access:                                              //// 
+.................... ////     #define LCD_DATA_PORT getenv("SFR:PORTD")                         //// 
+.................... ////                                                                       //// 
+.................... ////  To use pin access, the following pins must be defined:               //// 
+.................... ////     LCD_ENABLE_PIN                                                    //// 
+.................... ////     LCD_RS_PIN                                                        //// 
+.................... ////     LCD_RW_PIN                                                        //// 
+.................... ////     LCD_DATA4                                                         //// 
+.................... ////     LCD_DATA5                                                         //// 
+.................... ////     LCD_DATA6                                                         //// 
+.................... ////     LCD_DATA7                                                         //// 
+.................... ////                                                                       //// 
+.................... ////  Example of pin access:                                               //// 
+.................... ////     #define LCD_ENABLE_PIN  PIN_E0                                    //// 
+.................... ////     #define LCD_RS_PIN      PIN_E1                                    //// 
+.................... ////     #define LCD_RW_PIN      PIN_E2                                    //// 
+.................... ////     #define LCD_DATA4       PIN_D4                                    //// 
+.................... ////     #define LCD_DATA5       PIN_D5                                    //// 
+.................... ////     #define LCD_DATA6       PIN_D6                                    //// 
+.................... ////     #define LCD_DATA7       PIN_D7                                    //// 
+.................... ////                                                                       //// 
+.................... /////////////////////////////////////////////////////////////////////////////// 
+.................... ////        (C) Copyright 1996,2009 Custom Computer Services           //// 
+.................... //// This source code may only be used by licensed users of the CCS C  //// 
+.................... //// compiler.  This source code may only be distributed to other      //// 
+.................... //// licensed users of the CCS C compiler.  No other use, reproduction //// 
+.................... //// or distribution is permitted without written permission.          //// 
+.................... //// Derivative programs created using this software in object code    //// 
+.................... //// form are not restricted in any way.                               //// 
+.................... /////////////////////////////////////////////////////////////////////////// 
+....................  
+.................... // define the pinout. 
+.................... // only required if port access is being used. 
+....................      #define LCD_ENABLE_PIN  PIN_B12                                   //// 
+....................      #define LCD_RS_PIN      PIN_B10                                    ////     
+....................      #define LCD_RW_PIN      PIN_B11                                    //// 
+....................      #define LCD_DATA4       PIN_D0                                    //// 
+....................      #define LCD_DATA5       PIN_D1                                    //// 
+....................      #define LCD_DATA6       PIN_D2                                    //// 
+....................      #define LCD_DATA7       PIN_D3  
+....................  
+....................  
+.................... typedef struct   
+.................... {                            // This structure is overlayed 
+....................    BOOLEAN enable;           // on to an I/O port to gain 
+....................    BOOLEAN rs;               // access to the LCD pins. 
+....................    BOOLEAN rw;               // The bits are allocated from 
+....................    BOOLEAN unused;           // low order up.  ENABLE will 
+....................    int     data : 4;         // be LSB pin of that port. 
+....................   #if defined(__PCD__)       // The port used will be LCD_DATA_PORT. 
+....................    int    reserved: 8; 
+....................   #endif 
+.................... } LCD_PIN_MAP; 
+....................  
+.................... // this is to improve compatability with previous LCD drivers that accepted 
+.................... // a define labeled 'use_portb_lcd' that configured the LCD onto port B. 
+.................... #if ((defined(use_portb_lcd)) && (use_portb_lcd==TRUE)) 
+....................  #define LCD_DATA_PORT getenv("SFR:PORTB") 
+.................... #endif 
+....................  
+.................... #if defined(__PCB__) 
+....................    // these definitions only need to be modified for baseline PICs. 
+....................    // all other PICs use LCD_PIN_MAP or individual LCD_xxx pin definitions. 
+.................... /*                                    EN, RS,   RW,   UNUSED,  DATA  */ 
+....................  const LCD_PIN_MAP LCD_OUTPUT_MAP =  {0,  0,    0,    0,       0}; 
+....................  const LCD_PIN_MAP LCD_INPUT_MAP =   {0,  0,    0,    0,       0xF}; 
+.................... #endif 
+....................  
+.................... ////////////////////// END CONFIGURATION /////////////////////////////////// 
+....................  
+.................... #ifndef LCD_ENABLE_PIN 
+....................    #define lcd_output_enable(x) lcdlat.enable=x 
+....................    #define lcd_enable_tris()   lcdtris.enable=0 
+.................... #else 
+....................    #define lcd_output_enable(x) output_bit(LCD_ENABLE_PIN, x) 
+....................    #define lcd_enable_tris()  output_drive(LCD_ENABLE_PIN) 
+.................... #endif 
+....................  
+.................... #ifndef LCD_RS_PIN 
+....................    #define lcd_output_rs(x) lcdlat.rs=x 
+....................    #define lcd_rs_tris()   lcdtris.rs=0 
+.................... #else 
+....................    #define lcd_output_rs(x) output_bit(LCD_RS_PIN, x) 
+....................    #define lcd_rs_tris()  output_drive(LCD_RS_PIN) 
+.................... #endif 
+....................  
+.................... #ifndef LCD_RW_PIN 
+....................    #define lcd_output_rw(x) lcdlat.rw=x 
+....................    #define lcd_rw_tris()   lcdtris.rw=0 
+.................... #else 
+....................    #define lcd_output_rw(x) output_bit(LCD_RW_PIN, x) 
+....................    #define lcd_rw_tris()  output_drive(LCD_RW_PIN) 
+.................... #endif 
+....................  
+.................... // original version of this library incorrectly labeled LCD_DATA0 as LCD_DATA4, 
+.................... // LCD_DATA1 as LCD_DATA5, and so on.  this block of code makes the driver 
+.................... // compatible with any code written for the original library 
+.................... #if (defined(LCD_DATA0) && defined(LCD_DATA1) && defined(LCD_DATA2) && defined(LCD_DATA3) && !defined(LCD_DATA4) && !defined(LCD_DATA5) && !defined(LCD_DATA6) && !defined(LCD_DATA7)) 
+....................    #define  LCD_DATA4    LCD_DATA0 
+....................    #define  LCD_DATA5    LCD_DATA1 
+....................    #define  LCD_DATA6    LCD_DATA2 
+....................    #define  LCD_DATA7    LCD_DATA3 
+.................... #endif 
+....................  
+.................... #ifndef LCD_DATA4 
+.................... #ifndef LCD_DATA_PORT 
+....................    #if defined(__PCB__) 
+....................       #define LCD_DATA_PORT      0x06     //portb 
+....................       #define set_tris_lcd(x)   set_tris_b(x) 
+....................    #else 
+....................      #if defined(PIN_D0) 
+....................       #define LCD_DATA_PORT      getenv("SFR:PORTD")     //portd 
+....................      #else 
+....................       #define LCD_DATA_PORT      getenv("SFR:PORTB")     //portb 
+....................      #endif 
+....................    #endif    
+.................... #endif 
+....................  
+.................... #if defined(__PCB__) 
+....................    LCD_PIN_MAP lcd, lcdlat; 
+....................    #byte lcd = LCD_DATA_PORT 
+....................    #byte lcdlat = LCD_DATA_PORT 
+.................... #elif defined(__PCM__) 
+....................    LCD_PIN_MAP lcd, lcdlat, lcdtris; 
+....................    #byte lcd = LCD_DATA_PORT 
+....................    #byte lcdlat = LCD_DATA_PORT 
+....................    #byte lcdtris = LCD_DATA_PORT+0x80 
+.................... #elif defined(__PCH__) 
+....................    LCD_PIN_MAP lcd, lcdlat, lcdtris; 
+....................    #byte lcd = LCD_DATA_PORT 
+....................    #byte lcdlat = LCD_DATA_PORT+9 
+....................    #byte lcdtris = LCD_DATA_PORT+0x12 
+.................... #elif defined(__PCD__) 
+....................    LCD_PIN_MAP lcd, lcdlat, lcdtris; 
+....................    #word lcd = LCD_DATA_PORT 
+....................    #word lcdlat = LCD_DATA_PORT+2 
+....................    #word lcdtris = LCD_DATA_PORT-0x02 
+.................... #endif 
+.................... #endif   //LCD_DATA4 not defined 
+....................  
+.................... #ifndef LCD_TYPE 
+....................    #define LCD_TYPE 2           // 0=5x7, 1=5x10, 2=2 lines 
+.................... #endif 
+....................  
+.................... #ifndef LCD_LINE_TWO 
+....................    #define LCD_LINE_TWO 0x40    // LCD RAM address for the second line 
+.................... #endif 
+....................  
+.................... BYTE const LCD_INIT_STRING[4] = {0x20 | (LCD_TYPE << 2), 0xc, 1, 6}; 
+....................                              // These bytes need to be sent to the LCD 
+....................                              // to start it up. 
+....................  
+.................... BYTE lcd_read_nibble(void); 
+....................  
+.................... BYTE lcd_read_byte(void) 
+.................... { 
+*
+0564:  MOV     W5,[W15++]
+....................    BYTE low,high; 
+....................  
+....................  #if defined(__PCB__) 
+....................    set_tris_lcd(LCD_INPUT_MAP); 
+....................  #else 
+....................   #if (defined(LCD_DATA4) && defined(LCD_DATA5) && defined(LCD_DATA6) && defined(LCD_DATA7)) 
+....................    output_float(LCD_DATA4); 
+0566:  BSET.B  2D2.0
+....................    output_float(LCD_DATA5); 
+0568:  BSET.B  2D2.1
+....................    output_float(LCD_DATA6); 
+056A:  BSET.B  2D2.2
+....................    output_float(LCD_DATA7); 
+056C:  BSET.B  2D2.3
+....................   #else 
+....................    lcdtris.data = 0xF; 
+....................   #endif 
+....................  #endif 
+....................          
+....................    lcd_output_rw(1); 
+056E:  BSET.B  2CB.3
+0570:  MOV     #E3,W4
+0572:  MOV     W4,2C6
+....................    delay_cycles(1); 
+0574:  NOP     
+....................    lcd_output_enable(1); 
+0576:  BSET.B  2CB.4
+0578:  MOV     #E3,W4
+057A:  MOV     W4,2C6
+....................    delay_cycles(1); 
+057C:  NOP     
+....................    high = lcd_read_nibble(); 
+057E:  CALL    52A
+0582:  MOV.B   W0L,9C9
+....................        
+....................    lcd_output_enable(0); 
+0584:  BCLR.B  2CB.4
+0586:  MOV     #E3,W4
+0588:  MOV     W4,2C6
+....................    delay_cycles(1); 
+058A:  NOP     
+....................    lcd_output_enable(1); 
+058C:  BSET.B  2CB.4
+058E:  MOV     #E3,W4
+0590:  MOV     W4,2C6
+....................    delay_us(1); 
+0592:  REPEAT  #5
+0594:  NOP     
+....................    low = lcd_read_nibble(); 
+0596:  CALL    52A
+059A:  MOV.B   W0L,9C8
+....................        
+....................    lcd_output_enable(0); 
+059C:  BCLR.B  2CB.4
+059E:  MOV     #E3,W4
+05A0:  MOV     W4,2C6
+....................  
+....................  #if defined(__PCB__) 
+....................    set_tris_lcd(LCD_INPUT_MAP); 
+....................  #else 
+....................   #if (defined(LCD_DATA4) && defined(LCD_DATA5) && defined(LCD_DATA6) && defined(LCD_DATA7)) 
+....................    output_drive(LCD_DATA4); 
+05A2:  BCLR.B  2D2.0
+....................    output_drive(LCD_DATA5); 
+05A4:  BCLR.B  2D2.1
+....................    output_drive(LCD_DATA6); 
+05A6:  BCLR.B  2D2.2
+....................    output_drive(LCD_DATA7); 
+05A8:  BCLR.B  2D2.3
+....................   #else 
+....................    lcdtris.data = 0x0; 
+....................   #endif 
+....................  #endif 
+....................  
+....................    return( (high<<4) | low); 
+05AA:  MOV.B   9C9,W0L
+05AC:  SL      W0,#4,W0
+05AE:  IOR.B   9C8,W0L
+.................... } 
+05B0:  MOV     [--W15],W5
+05B2:  RETURN  
+....................  
+.................... BYTE lcd_read_nibble(void) 
+.................... { 
+....................   #if (defined(LCD_DATA4) && defined(LCD_DATA5) && defined(LCD_DATA6) && defined(LCD_DATA7)) 
+*
+052A:  MOV     W5,[W15++]
+052C:  CLR.B   9CA
+....................    BYTE n = 0x00; 
+....................  
+....................    /* Read the data port */ 
+....................    n |= input(LCD_DATA4); 
+052E:  BSET.B  2D2.0
+0530:  CLR.B   W0
+0532:  BTSC.B  2D4.0
+0534:  INC     W0,W0
+0536:  IOR.B   9CA
+....................    n |= input(LCD_DATA5) << 1; 
+0538:  BSET.B  2D2.1
+053A:  CLR.B   W0
+053C:  BTSC.B  2D4.1
+053E:  INC     W0,W0
+0540:  SL      W0,#1,W0
+0542:  IOR.B   9CA
+....................    n |= input(LCD_DATA6) << 2; 
+0544:  BSET.B  2D2.2
+0546:  CLR.B   W0
+0548:  BTSC.B  2D4.2
+054A:  INC     W0,W0
+054C:  SL      W0,#2,W0
+054E:  IOR.B   9CA
+....................    n |= input(LCD_DATA7) << 3; 
+0550:  BSET.B  2D2.3
+0552:  CLR.B   W0
+0554:  BTSC.B  2D4.3
+0556:  INC     W0,W0
+0558:  SL      W0,#3,W0
+055A:  IOR.B   9CA
+....................     
+....................    return(n); 
+055C:  MOV.B   9CA,W0L
+055E:  MOV.B   W0L,0
+....................   #else 
+....................    return(lcd.data); 
+....................   #endif 
+.................... } 
+0560:  MOV     [--W15],W5
+0562:  RETURN  
+....................  
+.................... void lcd_send_nibble(BYTE n) 
+.................... { 
+....................   #if (defined(LCD_DATA4) && defined(LCD_DATA5) && defined(LCD_DATA6) && defined(LCD_DATA7)) 
+....................    /* Write to the data port */ 
+....................    output_bit(LCD_DATA4, bit_test(n, 0)); 
+*
+04E6:  BTSC.B  9CA.0
+04E8:  BRA     4EE
+04EA:  BCLR.B  2D6.0
+04EC:  BRA     4F0
+04EE:  BSET.B  2D6.0
+04F0:  BCLR.B  2D2.0
+....................    output_bit(LCD_DATA5, bit_test(n, 1)); 
+04F2:  BTSC.B  9CA.1
+04F4:  BRA     4FA
+04F6:  BCLR.B  2D6.1
+04F8:  BRA     4FC
+04FA:  BSET.B  2D6.1
+04FC:  BCLR.B  2D2.1
+....................    output_bit(LCD_DATA6, bit_test(n, 2)); 
+04FE:  BTSC.B  9CA.2
+0500:  BRA     506
+0502:  BCLR.B  2D6.2
+0504:  BRA     508
+0506:  BSET.B  2D6.2
+0508:  BCLR.B  2D2.2
+....................    output_bit(LCD_DATA7, bit_test(n, 3)); 
+050A:  BTSC.B  9CA.3
+050C:  BRA     512
+050E:  BCLR.B  2D6.3
+0510:  BRA     514
+0512:  BSET.B  2D6.3
+0514:  BCLR.B  2D2.3
+....................   #else       
+....................    lcdlat.data = n; 
+....................   #endif 
+....................        
+....................    delay_cycles(1); 
+0516:  NOP     
+....................    lcd_output_enable(1); 
+0518:  BSET.B  2CB.4
+051A:  MOV     #E3,W4
+051C:  MOV     W4,2C6
+....................    delay_us(2); 
+051E:  REPEAT  #C
+0520:  NOP     
+....................    lcd_output_enable(0); 
+0522:  BCLR.B  2CB.4
+0524:  MOV     #E3,W4
+0526:  MOV     W4,2C6
+.................... } 
+0528:  RETURN  
+....................  
+.................... void lcd_send_byte(BYTE address, BYTE n) 
+.................... { 
+*
+05B4:  MOV     W5,[W15++]
+....................    lcd_output_rs(0); 
+05B6:  BCLR.B  2CB.2
+05B8:  MOV     #E3,W4
+05BA:  MOV     W4,2C6
+....................    while ( bit_test(lcd_read_byte(),7) ) ; 
+05BC:  CALL    564
+05C0:  MOV.B   W0L,W5L
+05C2:  BTSC    W5.7
+05C4:  BRA     5BC
+....................    lcd_output_rs(address); 
+05C6:  CP0.B   9C4
+05C8:  BRA     NZ,5CE
+05CA:  BCLR.B  2CB.2
+05CC:  BRA     5D0
+05CE:  BSET.B  2CB.2
+05D0:  MOV     #E3,W4
+05D2:  MOV     W4,2C6
+....................    delay_cycles(1); 
+05D4:  NOP     
+....................    lcd_output_rw(0); 
+05D6:  BCLR.B  2CB.3
+05D8:  MOV     #E3,W4
+05DA:  MOV     W4,2C6
+....................    delay_cycles(1); 
+05DC:  NOP     
+....................    lcd_output_enable(0); 
+05DE:  BCLR.B  2CB.4
+05E0:  MOV     #E3,W4
+05E2:  MOV     W4,2C6
+....................    lcd_send_nibble(n >> 4); 
+05E4:  MOV     9C4,W5
+05E6:  LSR     W5,#8,W5
+05E8:  CLR.B   B
+05EA:  LSR     W5,#4,W5
+05EC:  PUSH    9CA
+05EE:  MOV.B   W5L,[W15-#2]
+05F0:  POP     9CA
+05F2:  CALL    4E6
+....................    lcd_send_nibble(n & 0xf); 
+05F6:  MOV.B   9C5,W0L
+05F8:  AND.B   W0L,#F,W5L
+05FA:  PUSH    9CA
+05FC:  MOV.B   W5L,[W15-#2]
+05FE:  POP     9CA
+0600:  CALL    4E6
+.................... } 
+0604:  MOV     [--W15],W5
+0606:  RETURN  
+....................  
+.................... void lcd_init(void)  
+.................... { 
+0608:  MOV     W5,[W15++]
+....................    BYTE i; 
+....................  
+....................  #if defined(__PCB__) 
+....................    set_tris_lcd(LCD_OUTPUT_MAP); 
+....................  #else 
+....................   #if (defined(LCD_DATA4) && defined(LCD_DATA5) && defined(LCD_DATA6) && defined(LCD_DATA7)) 
+....................    output_drive(LCD_DATA4); 
+060A:  BCLR.B  2D2.0
+....................    output_drive(LCD_DATA5); 
+060C:  BCLR.B  2D2.1
+....................    output_drive(LCD_DATA6); 
+060E:  BCLR.B  2D2.2
+....................    output_drive(LCD_DATA7); 
+0610:  BCLR.B  2D2.3
+....................   #else 
+....................    lcdtris.data = 0x0; 
+....................   #endif 
+....................    lcd_enable_tris(); 
+0612:  MOV     #E3,W4
+0614:  MOV     W4,2C6
+....................    lcd_rs_tris(); 
+0616:  MOV     #E3,W4
+0618:  MOV     W4,2C6
+....................    lcd_rw_tris(); 
+061A:  MOV     #E3,W4
+061C:  MOV     W4,2C6
+....................  #endif 
+....................  
+....................    lcd_output_rs(0); 
+061E:  BCLR.B  2CB.2
+0620:  MOV     #E3,W4
+0622:  MOV     W4,2C6
+....................    lcd_output_rw(0); 
+0624:  BCLR.B  2CB.3
+0626:  MOV     #E3,W4
+0628:  MOV     W4,2C6
+....................    lcd_output_enable(0); 
+062A:  BCLR.B  2CB.4
+062C:  MOV     #E3,W4
+062E:  MOV     W4,2C6
+....................      
+....................    delay_ms(15); 
+0630:  MOV     #F,W0
+0632:  CALL    4D6
+....................    for(i=1;i<=3;++i) 
+0636:  MOV.B   #1,W0L
+0638:  MOV.B   W0L,996
+063A:  MOV     996,W4
+063C:  CP.B    W4L,#3
+063E:  BRA     GTU,658
+....................    { 
+....................        lcd_send_nibble(3); 
+0640:  MOV.B   #3,W0L
+0642:  MOV.B   W0L,9CA
+0644:  CALL    4E6
+....................        delay_ms(5); 
+0648:  REPEAT  #FF0
+064A:  NOP     
+064C:  REPEAT  #3FFF
+064E:  NOP     
+0650:  REPEAT  #3FFF
+0652:  NOP     
+....................    } 
+0654:  INC.B   0996
+0656:  BRA     63A
+....................      
+....................    lcd_send_nibble(2); 
+0658:  MOV.B   #2,W0L
+065A:  MOV.B   W0L,9CA
+065C:  CALL    4E6
+....................    for(i=0;i<=3;++i) 
+0660:  CLR.B   996
+0662:  MOV     996,W4
+0664:  CP.B    W4L,#3
+0666:  BRA     GTU,680
+....................       lcd_send_byte(0,LCD_INIT_STRING[i]); 
+0668:  MOV.B   996,W0L
+066A:  CLR.B   1
+066C:  CALL    100
+0670:  MOV.B   W0L,W5L
+0672:  CLR.B   9C4
+0674:  MOV.B   W5L,W0L
+0676:  MOV.B   W0L,9C5
+0678:  CALL    5B4
+067C:  INC.B   0996
+067E:  BRA     662
+.................... } 
+0680:  MOV     [--W15],W5
+0682:  RETURN  
+....................  
+.................... void lcd_gotoxy(BYTE x, BYTE y) 
+.................... { 
+*
+0750:  MOV     W5,[W15++]
+....................    BYTE address; 
+....................  
+....................    if(y!=1) 
+0752:  MOV     9BE,W4
+0754:  LSR     W4,#8,W4
+0756:  CP.B    W4L,#1
+0758:  BRA     Z,760
+....................       address=LCD_LINE_TWO; 
+075A:  MOV.B   #40,W0L
+075C:  MOV.B   W0L,9C0
+....................    else 
+075E:  BRA     762
+....................       address=0; 
+0760:  CLR.B   9C0
+....................       
+....................    address+=x-1; 
+0762:  MOV     9BE,W4
+0764:  SUB.B   W4L,#1,W0L
+0766:  ADD.B   9C0
+....................    lcd_send_byte(0,0x80|address); 
+0768:  MOV     9C0,W5
+076A:  IOR.B   #80,W5L
+076C:  CLR.B   9C4
+076E:  MOV.B   W5L,W0L
+0770:  MOV.B   W0L,9C5
+0772:  CALL    5B4
+.................... } 
+0776:  MOV     [--W15],W5
+0778:  RETURN  
+....................  
+.................... void lcd_putc(char c) 
+.................... { 
+....................    switch (c) 
+....................    { 
+077A:  MOV.B   9BC,W0L
+077C:  CLR.B   1
+077E:  XOR     #C,W0
+0780:  BRA     Z,78C
+0782:  XOR     #6,W0
+0784:  BRA     Z,79C
+0786:  XOR     #2,W0
+0788:  BRA     Z,7AA
+078A:  BRA     7B6
+....................       case '\f'   :  lcd_send_byte(0,1); 
+078C:  CLR.B   9C4
+078E:  MOV.B   #1,W0L
+0790:  MOV.B   W0L,9C5
+0792:  CALL    5B4
+....................                      delay_ms(2); 
+0796:  REPEAT  #3992
+0798:  NOP     
+....................                      break; 
+079A:  BRA     7C4
+....................                       
+....................       case '\n'   : lcd_gotoxy(1,2);        break; 
+079C:  MOV.B   #1,W0L
+079E:  MOV.B   W0L,9BE
+07A0:  MOV.B   #2,W0L
+07A2:  MOV.B   W0L,9BF
+07A4:  CALL    750
+07A8:  BRA     7C4
+....................       
+....................       case '\b'   : lcd_send_byte(0,0x10);  break; 
+07AA:  CLR.B   9C4
+07AC:  MOV.B   #10,W0L
+07AE:  MOV.B   W0L,9C5
+07B0:  CALL    5B4
+07B4:  BRA     7C4
+....................       
+....................       default     : lcd_send_byte(1,c);     break; 
+07B6:  MOV.B   #1,W0L
+07B8:  MOV.B   W0L,9C4
+07BA:  MOV.B   9BC,W0L
+07BC:  MOV.B   W0L,9C5
+07BE:  CALL    5B4
+07C2:  BRA     7C4
+....................    } 
+.................... } 
+07C4:  RETURN  
+....................   
+.................... char lcd_getc(BYTE x, BYTE y) 
+.................... { 
+....................    char value; 
+....................  
+....................    lcd_gotoxy(x,y); 
+....................    while ( bit_test(lcd_read_byte(),7) ); // wait until busy flag is low 
+....................    lcd_output_rs(1); 
+....................    value = lcd_read_byte(); 
+....................    lcd_output_rs(0); 
+....................     
+....................    return(value); 
+.................... } 
+....................  
+.................... #include "ADH8066.c" 
+.................... /******************Global definitions********************/ 
+.................... #define AT "AT+" 
+.................... #define CPIN "CPIN?\r\n" 
+.................... #define AIPDCONT "AIPDCONT=\"INTERNET.MOVISTAR.MX\",\"MOVISTAR\",\"MOVISTAR\"\r\n" 
+.................... #define AIPO "AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1\r\n" 
+....................  
+.................... /******************Variable and constant definitions*****/ 
+.................... const char hexcode[17]="0123456789abcdef"; 
+....................  
+....................  
+.................... char InputBuffer[350]={0}; 
+*
+1D28:  CLR     836
+1D2A:  CLR     838
+1D2C:  CLR     83A
+1D2E:  CLR     83C
+1D30:  CLR     83E
+1D32:  CLR     840
+1D34:  CLR     842
+1D36:  CLR     844
+1D38:  CLR     846
+1D3A:  CLR     848
+1D3C:  CLR     84A
+1D3E:  CLR     84C
+1D40:  CLR     84E
+1D42:  CLR     850
+1D44:  CLR     852
+1D46:  CLR     854
+1D48:  CLR     856
+1D4A:  CLR     858
+1D4C:  CLR     85A
+1D4E:  CLR     85C
+1D50:  CLR     85E
+1D52:  CLR     860
+1D54:  CLR     862
+1D56:  CLR     864
+1D58:  CLR     866
+1D5A:  CLR     868
+1D5C:  CLR     86A
+1D5E:  CLR     86C
+1D60:  CLR     86E
+1D62:  CLR     870
+1D64:  CLR     872
+1D66:  CLR     874
+1D68:  CLR     876
+1D6A:  CLR     878
+1D6C:  CLR     87A
+1D6E:  CLR     87C
+1D70:  CLR     87E
+1D72:  CLR     880
+1D74:  CLR     882
+1D76:  CLR     884
+1D78:  CLR     886
+1D7A:  CLR     888
+1D7C:  CLR     88A
+1D7E:  CLR     88C
+1D80:  CLR     88E
+1D82:  CLR     890
+1D84:  CLR     892
+1D86:  CLR     894
+1D88:  CLR     896
+1D8A:  CLR     898
+1D8C:  CLR     89A
+1D8E:  CLR     89C
+1D90:  CLR     89E
+1D92:  CLR     8A0
+1D94:  CLR     8A2
+1D96:  CLR     8A4
+1D98:  CLR     8A6
+1D9A:  CLR     8A8
+1D9C:  CLR     8AA
+1D9E:  CLR     8AC
+1DA0:  CLR     8AE
+1DA2:  CLR     8B0
+1DA4:  CLR     8B2
+1DA6:  CLR     8B4
+1DA8:  CLR     8B6
+1DAA:  CLR     8B8
+1DAC:  CLR     8BA
+1DAE:  CLR     8BC
+1DB0:  CLR     8BE
+1DB2:  CLR     8C0
+1DB4:  CLR     8C2
+1DB6:  CLR     8C4
+1DB8:  CLR     8C6
+1DBA:  CLR     8C8
+1DBC:  CLR     8CA
+1DBE:  CLR     8CC
+1DC0:  CLR     8CE
+1DC2:  CLR     8D0
+1DC4:  CLR     8D2
+1DC6:  CLR     8D4
+1DC8:  CLR     8D6
+1DCA:  CLR     8D8
+1DCC:  CLR     8DA
+1DCE:  CLR     8DC
+1DD0:  CLR     8DE
+1DD2:  CLR     8E0
+1DD4:  CLR     8E2
+1DD6:  CLR     8E4
+1DD8:  CLR     8E6
+1DDA:  CLR     8E8
+1DDC:  CLR     8EA
+1DDE:  CLR     8EC
+1DE0:  CLR     8EE
+1DE2:  CLR     8F0
+1DE4:  CLR     8F2
+1DE6:  CLR     8F4
+1DE8:  CLR     8F6
+1DEA:  CLR     8F8
+1DEC:  CLR     8FA
+1DEE:  CLR     8FC
+1DF0:  CLR     8FE
+1DF2:  CLR     900
+1DF4:  CLR     902
+1DF6:  CLR     904
+1DF8:  CLR     906
+1DFA:  CLR     908
+1DFC:  CLR     90A
+1DFE:  CLR     90C
+1E00:  CLR     90E
+1E02:  CLR     910
+1E04:  CLR     912
+1E06:  CLR     914
+1E08:  CLR     916
+1E0A:  CLR     918
+1E0C:  CLR     91A
+1E0E:  CLR     91C
+1E10:  CLR     91E
+1E12:  CLR     920
+1E14:  CLR     922
+1E16:  CLR     924
+1E18:  CLR     926
+1E1A:  CLR     928
+1E1C:  CLR     92A
+1E1E:  CLR     92C
+1E20:  CLR     92E
+1E22:  CLR     930
+1E24:  CLR     932
+1E26:  CLR     934
+1E28:  CLR     936
+1E2A:  CLR     938
+1E2C:  CLR     93A
+1E2E:  CLR     93C
+1E30:  CLR     93E
+1E32:  CLR     940
+1E34:  CLR     942
+1E36:  CLR     944
+1E38:  CLR     946
+1E3A:  CLR     948
+1E3C:  CLR     94A
+1E3E:  CLR     94C
+1E40:  CLR     94E
+1E42:  CLR     950
+1E44:  CLR     952
+1E46:  CLR     954
+1E48:  CLR     956
+1E4A:  CLR     958
+1E4C:  CLR     95A
+1E4E:  CLR     95C
+1E50:  CLR     95E
+1E52:  CLR     960
+1E54:  CLR     962
+1E56:  CLR     964
+1E58:  CLR     966
+1E5A:  CLR     968
+1E5C:  CLR     96A
+1E5E:  CLR     96C
+1E60:  CLR     96E
+1E62:  CLR     970
+1E64:  CLR     972
+1E66:  CLR     974
+1E68:  CLR     976
+1E6A:  CLR     978
+1E6C:  CLR     97A
+1E6E:  CLR     97C
+1E70:  CLR     97E
+1E72:  CLR     980
+1E74:  CLR     982
+1E76:  CLR     984
+1E78:  CLR     986
+1E7A:  CLR     988
+1E7C:  CLR     98A
+1E7E:  CLR     98C
+1E80:  CLR     98E
+1E82:  CLR     990
+1E84:  CLR     992
+.................... int16 ptime=100; 
+....................  
+.................... /***********StringToHex*********************************** 
+.................... **   Description: This function converts a string in    ** 
+.................... **     their hex codification                           ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... void StringToHex(char* Str,unsigned int size,char* result) 
+.................... { 
+.................... 	int index=0,aux=0,aux2=0; 
+.................... 	for(index=0;index<size;index++) 
+.................... 		{ 
+.................... 			aux=*(Str+index); 
+.................... 			aux2=aux/16; 
+.................... 			*(result+(index*2))=hexcode[aux2]; 
+.................... 			if(aux>15) 
+.................... 				{ 
+.................... 					aux=aux-(aux2*16); 
+.................... 				} 
+.................... 			*(result+((index*2)+1))=hexcode[aux];	 
+.................... 		} 
+.................... } 
+....................  
+.................... /***********FillArray************************************* 
+.................... **   Description: Function used to fill an array with   ** 
+.................... **     value of (val) variable                          ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... void FillArray(char* arrayval,int size,char val) 
+.................... { 
+*
+07C6:  MOV     W5,[W15++]
+07C8:  CLR     9BA
+.................... 	int index=0; 
+.................... 	for(index=0;index<size;index++) 
+07CA:  CLR     9BA
+07CC:  MOV     9BA,W0
+07CE:  MOV     9B6,W4
+07D0:  CP      W4,W0
+07D2:  BRA     LE,7E2
+.................... 	{ 
+.................... 		*(arrayval+index)=val; 
+07D4:  MOV     9B4,W0
+07D6:  ADD     9BA,W0
+07D8:  MOV     W0,W5
+07DA:  MOV.B   9B8,W0L
+07DC:  MOV.B   W0L,[W5+#0]
+.................... 	} 
+07DE:  INC     09BA
+07E0:  BRA     7CC
+.................... } 
+07E2:  MOV     [--W15],W5
+07E4:  RETURN  
+....................  
+.................... /***********ReadBuffer************************************ 
+.................... **   Description: Reads incoming characters until arrive** 
+.................... **     a carriage return '\r' and save the buffer in    ** 
+.................... **       *buffer array                                  ** 
+.................... *********************************************************/ 
+.................... void ReadBuffer(char* buffer) 
+.................... { 
+*
+07F4:  MOV     W5,[W15++]
+07F6:  MOV     W6,[W15++]
+07F8:  CLR     9B6
+.................... 	int16 index=0; 
+.................... 	OERR=16; 
+07FA:  MOV.B   #10,W0L
+07FC:  MOV.B   W0L,20E
+.................... 	//******Get incoming buffer data****** 
+.................... 	while(getc()!='\n'); 
+07FE:  CALL    7E6
+0802:  CP.B    W0L,#A
+0804:  BRA     NZ,7FE
+....................     do 
+....................     { 
+....................        *(buffer+index)=getc();	 
+0806:  MOV     9B4,W0
+0808:  ADD     9B6,W0
+080A:  MOV     W0,W5
+080C:  MOV     FE8,W6
+080E:  CALL    7E6
+0812:  MOV     W6,FE8
+0814:  MOV.B   W0L,[W5]
+.................... 		index++; 
+0816:  INC     09B6
+....................     }while(index<350 && *(buffer+index-1)!='\r'); 
+0818:  MOV     9B6,W4
+081A:  MOV     #15E,W3
+081C:  CP      W3,W4
+081E:  BRA     LE,82E
+0820:  MOV     9B4,W0
+0822:  ADD     9B6,W0
+0824:  MOV     W0,W5
+0826:  SUB     W5,#1,W0
+0828:  MOV.B   [W0],W4L
+082A:  CP.B    W4L,#D
+082C:  BRA     NZ,806
+....................  
+.................... 	//***Buzzer sound when receive******** 
+....................     output_bit(PIN_D9,1); 
+082E:  BSET.B  2D7.1
+0830:  BCLR.B  2D3.1
+.................... 	delay_ms(100); 
+0832:  MOV     #64,W0
+0834:  CALL    4D6
+.................... 	output_bit(PIN_D9,0); 
+0838:  BCLR.B  2D7.1
+083A:  BCLR.B  2D3.1
+.................... 	OERR=16; 
+083C:  MOV.B   #10,W0L
+083E:  MOV.B   W0L,20E
+....................  
+.................... } 
+0840:  MOV     [--W15],W6
+0842:  MOV     [--W15],W5
+0844:  RETURN  
+....................  
+.................... /***********PrintBuffer*********************************** 
+.................... **   Description: Prints in LCD the specified buffer    ** 
+.................... **     of characters with a permanency of ms            ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... void PrintBuffer(char* buffer,int16 permanency) 
+.................... { 
+0846:  MOV     W5,[W15++]
+.................... 	lcd_putc("\f"); 
+0848:  MOV     #0,W5
+084A:  MOV     W5,W0
+084C:  CALL    110
+0850:  IOR.B   #0,W0L
+0852:  BTSC.B  42.1
+0854:  BRA     860
+0856:  INC     W5,W5
+0858:  MOV.B   W0L,9BC
+085A:  CALL    77A
+085E:  BRA     84A
+....................     printf(lcd_putc,"%s",buffer); 
+0860:  MOV     9B0,W1
+0862:  CP0.B   [W1]
+0864:  BRA     Z,876
+0866:  MOV     W1,[W15++]
+0868:  MOV.B   [W1+#0],W0L
+086A:  MOV.B   W0L,9BC
+086C:  CALL    77A
+0870:  MOV     [--W15],W1
+0872:  INC     W1,W1
+0874:  BRA     862
+.................... 	delay_ms(permanency); 
+0876:  MOV     9B2,W0
+0878:  CALL    4D6
+.................... } 
+087C:  MOV     [--W15],W5
+087E:  RETURN  
+....................  
+.................... /***********ValidateCommand******************************* 
+.................... **   Description: Validate that input string does not   ** 
+.................... **     contains an ERROR                                ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... int ValidateCommand(char* cmdstr,int size) 
+.................... { 
+0880:  MOV     W5,[W15++]
+0882:  CLR     9B4
+0884:  MOV     #1,W4
+0886:  MOV     W4,9B6
+.................... 	int index=0,result=1; 
+.................... 	for(index=0;index<size;index++) 
+0888:  CLR     9B4
+088A:  MOV     9B4,W0
+088C:  MOV     9B2,W4
+088E:  CP      W4,W0
+0890:  BRA     LE,8B2
+.................... 	{ 
+.................... 		if(*(cmdstr+index)=='E' && *(cmdstr+(index+1))=='R')  
+0892:  MOV     9B0,W0
+0894:  ADD     9B4,W0
+0896:  MOV.B   [W0],W4L
+0898:  XOR.B   #45,W4L
+089A:  BRA     NZ,8AE
+089C:  MOV     9B4,W4
+089E:  ADD     W4,#1,W4
+08A0:  MOV     W4,W0
+08A2:  MOV     9B0,W4
+08A4:  ADD     W0,W4,W0
+08A6:  MOV.B   [W0],W4L
+08A8:  XOR.B   #52,W4L
+08AA:  BRA     NZ,8AE
+.................... 		{ 
+.................... 			result=0; 
+08AC:  CLR     9B6
+.................... 		} 
+.................... 	} 
+08AE:  INC     09B4
+08B0:  BRA     88A
+....................  
+....................     return result; 
+08B2:  PUSH    9B6
+08B4:  POP     0
+.................... } 
+08B6:  MOV     [--W15],W5
+08B8:  RETURN  
+....................  
+.................... /***********GetDecVal************************************* 
+.................... **   Description: Function used to find a decimal value ** 
+.................... **     into string                                      ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... int GetDecVal(char* arrayval,int16 size,char stch1,char stch2) 
+.................... { 
+*
+0C06:  MOV     W5,[W15++]
+0C08:  CLR     9B0
+0C0A:  SETM    9B2
+.................... 	int16 ind=0; 
+....................     int16  value=-1; 
+....................  
+.................... 	while(ind<size && *(arrayval+ind)!='$')// && value==-1) 
+.................... 	{ 
+0C0C:  MOV     9B0,W0
+0C0E:  MOV     9AC,W4
+0C10:  CP      W4,W0
+0C12:  BRA     LE,C74
+0C14:  MOV     9AA,W0
+0C16:  ADD     9B0,W0
+0C18:  MOV.B   [W0],W4L
+0C1A:  XOR.B   #24,W4L
+0C1C:  BRA     Z,C74
+....................  
+.................... 		if(*(arrayval+ind)==stch1 && *(arrayval+(ind+1))==stch2) 
+0C1E:  MOV     9AA,W0
+0C20:  ADD     9B0,W0
+0C22:  MOV.B   [W0],W0L
+0C24:  CP.B    9AE
+0C26:  BRA     NZ,C70
+0C28:  MOV     9B0,W4
+0C2A:  ADD     W4,#1,W4
+0C2C:  MOV     W4,W0
+0C2E:  MOV     9AA,W4
+0C30:  ADD     W0,W4,W0
+0C32:  MOV.B   [W0],W0L
+0C34:  CP.B    9AF
+0C36:  BRA     NZ,C70
+.................... 			{ 
+.................... 				ind+=2; 
+0C38:  MOV     9B0,W4
+0C3A:  ADD     W4,#2,W4
+0C3C:  MOV     W4,9B0
+.................... 				value=0; 
+0C3E:  CLR     9B2
+.................... 				while(*(arrayval+ind)>47 && *(arrayval+ind)<58) 
+.................... 					{ 
+0C40:  MOV     9AA,W0
+0C42:  ADD     9B0,W0
+0C44:  MOV     #2F,W4
+0C46:  CP.B    W4L,[W0]
+0C48:  BRA     C,C70
+0C4A:  MOV     9AA,W0
+0C4C:  ADD     9B0,W0
+0C4E:  MOV.B   [W0],W4L
+0C50:  MOV     #3A,W3
+0C52:  CP.B    W3L,W4L
+0C54:  BRA     LEU,C70
+.................... 						value*=10; 
+0C56:  MOV     9B2,W4
+0C58:  MUL.UU  W4,#A,W0
+0C5A:  MOV     W0,9B2
+.................... 						value+=(*(arrayval+ind)-48); 
+0C5C:  MOV     9AA,W0
+0C5E:  ADD     9B0,W0
+0C60:  MOV.B   [W0],W4L
+0C62:  SUB.B   #30,W4L
+0C64:  MOV.B   W4L,W0L
+0C66:  MOV.B   W0L,0
+0C68:  ZE      W0,W0
+0C6A:  ADD     9B2
+.................... 						ind++; 
+0C6C:  INC     09B0
+.................... 					} 
+0C6E:  BRA     C40
+.................... 			} 
+.................... 		ind++; 
+0C70:  INC     09B0
+.................... 	} 
+0C72:  BRA     C0C
+....................  
+.................... 	return value; 
+0C74:  PUSH    9B2
+0C76:  POP     0
+.................... } 
+0C78:  MOV     [--W15],W5
+0C7A:  RETURN  
+....................  
+.................... /***********ConfigureGPRS********************************* 
+.................... **   Description: Function used to configure the GPRS   ** 
+.................... **     module to conect it to internet                  ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... void ConfigureGPRS() 
+.................... { 
+*
+08BA:  MOV     W5,[W15++]
+08BC:  CLR     996
+08BE:  CLR     998
+.................... 	int status=0,count=0; 
+....................  
+.................... 	while(status==0 && count<5) 
+.................... 		{ 
+08C0:  CP0     996
+08C2:  BRA     NZ,B08
+08C4:  MOV     998,W4
+08C6:  CP      W4,#5
+08C8:  BRA     GE,B08
+.................... 			FillArray(InputBuffer,350,0);  //Clear input_buffer 
+08CA:  CLR.B   9B8
+08CC:  MOV     #836,W4
+08CE:  MOV     W4,9B4
+08D0:  MOV     #15E,W4
+08D2:  MOV     W4,9B6
+08D4:  CALL    7C6
+.................... 			printf("AT+CPIN?\r\n");         //Verify chip 
+08D8:  MOV     #0,W1
+08DA:  MOV     W1,W0
+08DC:  CALL    11E
+08E0:  INC     W1,W1
+08E2:  MOV     W1,[W15++]
+08E4:  BTSC.B  20F.1
+08E6:  BRA     8E4
+08E8:  MOV     W0,210
+08EA:  MOV     [--W15],W1
+08EC:  MOV     #9,W0
+08EE:  CPSGT   W1,W0
+08F0:  BRA     8DA
+.................... 			ReadBuffer(InputBuffer); 
+08F2:  MOV     #836,W4
+08F4:  MOV     W4,9B4
+08F6:  CALL    7F4
+.................... 			PrintBuffer(InputBuffer,100); 
+08FA:  MOV     #64,W4
+08FC:  MOV     W4,9B2
+08FE:  MOV     #836,W4
+0900:  MOV     W4,9B0
+0902:  CALL    846
+.................... 			status=ValidateCommand(InputBuffer,30); 
+0906:  MOV     #1E,W4
+0908:  MOV     W4,9B2
+090A:  MOV     #836,W4
+090C:  MOV     W4,9B0
+090E:  CALL    880
+0912:  MOV     W0,996
+.................... 			if(status==1) lcd_putc("\fCMD OK"); 
+0914:  MOV     996,W4
+0916:  CP      W4,#1
+0918:  BRA     NZ,934
+091A:  MOV     #0,W5
+091C:  MOV     W5,W0
+091E:  CALL    136
+0922:  IOR.B   #0,W0L
+0924:  BTSC.B  42.1
+0926:  BRA     932
+0928:  INC     W5,W5
+092A:  MOV.B   W0L,9BC
+092C:  CALL    77A
+0930:  BRA     91C
+.................... 			else  
+0932:  BRA     94E
+.................... 				{	 
+.................... 					lcd_putc("\fCMD BAD"); 
+0934:  MOV     #0,W5
+0936:  MOV     W5,W0
+0938:  CALL    14A
+093C:  IOR.B   #0,W0L
+093E:  BTSC.B  42.1
+0940:  BRA     94C
+0942:  INC     W5,W5
+0944:  MOV.B   W0L,9BC
+0946:  CALL    77A
+094A:  BRA     936
+.................... 					status=0; 
+094C:  CLR     996
+.................... 				} 
+.................... 			delay_ms(500); 
+094E:  MOV     #1F4,W0
+0950:  CALL    4D6
+.................... 	 
+.................... 			if(status==1) 
+0954:  MOV     996,W4
+0956:  CP      W4,#1
+0958:  BRA     NZ,9E4
+.................... 				{ 
+.................... 					FillArray(InputBuffer,350,0);  //Clear input_buffer 
+095A:  CLR.B   9B8
+095C:  MOV     #836,W4
+095E:  MOV     W4,9B4
+0960:  MOV     #15E,W4
+0962:  MOV     W4,9B6
+0964:  CALL    7C6
+.................... 					printf("AT+AIPDCONT=\"internet.movistar.mx\",\"movistar\",\"movistar\"\r\n");  //Configure internet 
+0968:  MOV     #0,W1
+096A:  MOV     W1,W0
+096C:  CALL    160
+0970:  INC     W1,W1
+0972:  MOV     W1,[W15++]
+0974:  BTSC.B  20F.1
+0976:  BRA     974
+0978:  MOV     W0,210
+097A:  MOV     [--W15],W1
+097C:  MOV     #39,W0
+097E:  CPSGT   W1,W0
+0980:  BRA     96A
+.................... 					ReadBuffer(InputBuffer); 
+0982:  MOV     #836,W4
+0984:  MOV     W4,9B4
+0986:  CALL    7F4
+.................... 					PrintBuffer(InputBuffer,1000); 
+098A:  MOV     #836,W4
+098C:  MOV     W4,9B0
+098E:  MOV     #3E8,W4
+0990:  MOV     W4,9B2
+0992:  CALL    846
+.................... 					status=ValidateCommand(InputBuffer,30); 
+0996:  MOV     #1E,W4
+0998:  MOV     W4,9B2
+099A:  MOV     #836,W4
+099C:  MOV     W4,9B0
+099E:  CALL    880
+09A2:  MOV     W0,996
+.................... 					if(status==1) lcd_putc("\fCMD OK"); 
+09A4:  MOV     996,W4
+09A6:  CP      W4,#1
+09A8:  BRA     NZ,9C4
+09AA:  MOV     #0,W5
+09AC:  MOV     W5,W0
+09AE:  CALL    136
+09B2:  IOR.B   #0,W0L
+09B4:  BTSC.B  42.1
+09B6:  BRA     9C2
+09B8:  INC     W5,W5
+09BA:  MOV.B   W0L,9BC
+09BC:  CALL    77A
+09C0:  BRA     9AC
+.................... 					else  
+09C2:  BRA     9DE
+.................... 						{ 
+.................... 							lcd_putc("\fCMD BAD"); 
+09C4:  MOV     #0,W5
+09C6:  MOV     W5,W0
+09C8:  CALL    14A
+09CC:  IOR.B   #0,W0L
+09CE:  BTSC.B  42.1
+09D0:  BRA     9DC
+09D2:  INC     W5,W5
+09D4:  MOV.B   W0L,9BC
+09D6:  CALL    77A
+09DA:  BRA     9C6
+.................... 							status=0; 
+09DC:  CLR     996
+.................... 						} 
+.................... 					delay_ms(500); 
+09DE:  MOV     #1F4,W0
+09E0:  CALL    4D6
+.................... 				}		 
+....................  
+.................... 			if(status==1) 
+09E4:  MOV     996,W4
+09E6:  CP      W4,#1
+09E8:  BRA     NZ,A74
+.................... 				{ 
+.................... 					FillArray(InputBuffer,350,0);  //Clear input_buffer 
+09EA:  CLR.B   9B8
+09EC:  MOV     #836,W4
+09EE:  MOV     W4,9B4
+09F0:  MOV     #15E,W4
+09F2:  MOV     W4,9B6
+09F4:  CALL    7C6
+.................... 					printf("AT+AIPA=1\r\n");        //Conect to internet 
+09F8:  MOV     #0,W1
+09FA:  MOV     W1,W0
+09FC:  CALL    1A4
+0A00:  INC     W1,W1
+0A02:  MOV     W1,[W15++]
+0A04:  BTSC.B  20F.1
+0A06:  BRA     A04
+0A08:  MOV     W0,210
+0A0A:  MOV     [--W15],W1
+0A0C:  MOV     #A,W0
+0A0E:  CPSGT   W1,W0
+0A10:  BRA     9FA
+.................... 					ReadBuffer(InputBuffer); 
+0A12:  MOV     #836,W4
+0A14:  MOV     W4,9B4
+0A16:  CALL    7F4
+.................... 					PrintBuffer(InputBuffer,1000); 
+0A1A:  MOV     #836,W4
+0A1C:  MOV     W4,9B0
+0A1E:  MOV     #3E8,W4
+0A20:  MOV     W4,9B2
+0A22:  CALL    846
+.................... 					status=ValidateCommand(InputBuffer,30); 
+0A26:  MOV     #1E,W4
+0A28:  MOV     W4,9B2
+0A2A:  MOV     #836,W4
+0A2C:  MOV     W4,9B0
+0A2E:  CALL    880
+0A32:  MOV     W0,996
+.................... 					if(status==1) lcd_putc("\fCMD OK"); 
+0A34:  MOV     996,W4
+0A36:  CP      W4,#1
+0A38:  BRA     NZ,A54
+0A3A:  MOV     #0,W5
+0A3C:  MOV     W5,W0
+0A3E:  CALL    136
+0A42:  IOR.B   #0,W0L
+0A44:  BTSC.B  42.1
+0A46:  BRA     A52
+0A48:  INC     W5,W5
+0A4A:  MOV.B   W0L,9BC
+0A4C:  CALL    77A
+0A50:  BRA     A3C
+.................... 					else  
+0A52:  BRA     A6E
+.................... 						{ 
+.................... 							lcd_putc("\fCMD BAD"); 
+0A54:  MOV     #0,W5
+0A56:  MOV     W5,W0
+0A58:  CALL    14A
+0A5C:  IOR.B   #0,W0L
+0A5E:  BTSC.B  42.1
+0A60:  BRA     A6C
+0A62:  INC     W5,W5
+0A64:  MOV.B   W0L,9BC
+0A66:  CALL    77A
+0A6A:  BRA     A56
+.................... 							status=0; 
+0A6C:  CLR     996
+.................... 						} 
+.................... 					delay_ms(500); 
+0A6E:  MOV     #1F4,W0
+0A70:  CALL    4D6
+.................... 				} 
+....................  
+.................... 			if(status==1) 
+0A74:  MOV     996,W4
+0A76:  CP      W4,#1
+0A78:  BRA     NZ,B04
+.................... 				{ 
+.................... 					FillArray(InputBuffer,350,0);  //Clear input_buffer 
+0A7A:  CLR.B   9B8
+0A7C:  MOV     #836,W4
+0A7E:  MOV     W4,9B4
+0A80:  MOV     #15E,W4
+0A82:  MOV     W4,9B6
+0A84:  CALL    7C6
+.................... 					printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server 
+0A88:  MOV     #0,W1
+0A8A:  MOV     W1,W0
+0A8C:  CALL    1BC
+0A90:  INC     W1,W1
+0A92:  MOV     W1,[W15++]
+0A94:  BTSC.B  20F.1
+0A96:  BRA     A94
+0A98:  MOV     W0,210
+0A9A:  MOV     [--W15],W1
+0A9C:  MOV     #30,W0
+0A9E:  CPSGT   W1,W0
+0AA0:  BRA     A8A
+.................... 					ReadBuffer(InputBuffer); 
+0AA2:  MOV     #836,W4
+0AA4:  MOV     W4,9B4
+0AA6:  CALL    7F4
+.................... 					PrintBuffer(InputBuffer,1000); 
+0AAA:  MOV     #836,W4
+0AAC:  MOV     W4,9B0
+0AAE:  MOV     #3E8,W4
+0AB0:  MOV     W4,9B2
+0AB2:  CALL    846
+.................... 					status=ValidateCommand(InputBuffer,30); 
+0AB6:  MOV     #1E,W4
+0AB8:  MOV     W4,9B2
+0ABA:  MOV     #836,W4
+0ABC:  MOV     W4,9B0
+0ABE:  CALL    880
+0AC2:  MOV     W0,996
+.................... 					if(status==1) lcd_putc("\fCMD OK"); 
+0AC4:  MOV     996,W4
+0AC6:  CP      W4,#1
+0AC8:  BRA     NZ,AE4
+0ACA:  MOV     #0,W5
+0ACC:  MOV     W5,W0
+0ACE:  CALL    136
+0AD2:  IOR.B   #0,W0L
+0AD4:  BTSC.B  42.1
+0AD6:  BRA     AE2
+0AD8:  INC     W5,W5
+0ADA:  MOV.B   W0L,9BC
+0ADC:  CALL    77A
+0AE0:  BRA     ACC
+.................... 					else  
+0AE2:  BRA     AFE
+.................... 						{ 
+.................... 							lcd_putc("\fCMD BAD"); 
+0AE4:  MOV     #0,W5
+0AE6:  MOV     W5,W0
+0AE8:  CALL    14A
+0AEC:  IOR.B   #0,W0L
+0AEE:  BTSC.B  42.1
+0AF0:  BRA     AFC
+0AF2:  INC     W5,W5
+0AF4:  MOV.B   W0L,9BC
+0AF6:  CALL    77A
+0AFA:  BRA     AE6
+.................... 							status=0; 
+0AFC:  CLR     996
+.................... 						} 
+.................... 					delay_ms(500); 
+0AFE:  MOV     #1F4,W0
+0B00:  CALL    4D6
+.................... 				} 
+.................... 			count++; 
+0B04:  INC     0998
+.................... 		} 
+0B06:  BRA     8C0
+.................... 	//return status; 
+.................... } 
+0B08:  MOV     [--W15],W5
+0B0A:  RETURN  
+....................  
+.................... /***********OpenPort************************************** 
+.................... **   Description: Open a TCP port in domain name and    ** 
+.................... **     specified in dname and rport variables           ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... int OpenPort(int socket, int lport,char dname[100], int rport) 
+.................... { 
+.................... 	int state=0; 
+.................... 	printf("AT+AIPO=%d,%d,\"%s\",%d,0,,1,2\r\n",socket,lport,dname,rport);  //Conect to server 
+.................... 	//******Get incoming buffer data****** 
+.................... 	ReadBuffer(InputBuffer); 
+.................... 	//***Print input buffer in LCD******** 
+.................... 	//PrintBuffer(InputBuffer,2000); 
+.................... 	//***Validate ok command************** 
+.................... 	state=ValidateCommand(InputBuffer,30); 
+.................... 	if(state==1) lcd_putc("\fCMD OK"); 
+.................... 	else 
+.................... 		{ 
+.................... 			 lcd_putc("\fCMD BAD"); 
+.................... 			 state=0; 
+.................... 		} 
+.................... 	delay_ms(ptime); 
+.................... 	return state; 
+.................... } 
+....................  
+.................... /***********ClosePort************************************* 
+.................... **   Description: Close a TCP port in domain name and   ** 
+.................... **     specified in dname and rport variables           ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... void ClosePort(int socket) 
+.................... { 
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+*
+0FAE:  CLR.B   9B8
+0FB0:  MOV     #836,W4
+0FB2:  MOV     W4,9B4
+0FB4:  MOV     #15E,W4
+0FB6:  MOV     W4,9B6
+0FB8:  CALL    7C6
+.................... 	printf("AT+AIPC=%d\r\n",socket);  //Disconnect 
+0FBC:  MOV     #0,W1
+0FBE:  MOV     W1,W0
+0FC0:  CALL    1FA
+0FC4:  INC     W1,W1
+0FC6:  MOV     W1,[W15++]
+0FC8:  BTSC.B  20F.1
+0FCA:  BRA     FC8
+0FCC:  MOV     W0,210
+0FCE:  MOV     [--W15],W1
+0FD0:  MOV     #7,W0
+0FD2:  CPSGT   W1,W0
+0FD4:  BRA     FBE
+0FD6:  MOV     9B0,W0
+0FD8:  MOV     #0,W4
+0FDA:  CALL    B0C
+0FDE:  BTSC.B  20F.1
+0FE0:  BRA     FDE
+0FE2:  MOV     #D,W4
+0FE4:  MOV     W4,210
+0FE6:  BTSC.B  20F.1
+0FE8:  BRA     FE6
+0FEA:  MOV     #A,W4
+0FEC:  MOV     W4,210
+.................... 	ReadBuffer(InputBuffer); 
+0FEE:  MOV     #836,W4
+0FF0:  MOV     W4,9B4
+0FF2:  CALL    7F4
+.................... 	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+.................... 	//else lcd_putc("\fCMD BAD"); 
+.................... 	//delay_ms(ptime); 
+.................... } 
+0FF6:  RETURN  
+....................  
+.................... /***********ConfigureDatetime***************************** 
+.................... **   Description: Connects to server to obtain the      ** 
+.................... **     current datetime of the specified device         ** 
+.................... **                                                      ** 
+.................... **  Notes: incoming format:                             ** 
+.................... **  dy24mt3yr2014hr11mn52$ (24/marzo/2014 11:52 a.m)    ** 
+.................... *********************************************************/ 
+.................... int ConfigureDatetime(int Id, byte* DateTime) 
+.................... { 
+*
+0C7C:  MOV     W5,[W15++]
+0C7E:  MOV     W6,[W15++]
+0C80:  CLR     99A
+0C82:  CLR     99C
+.................... 	int status=0; 
+.................... 	int16 index=0; 
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+0C84:  CLR.B   9B8
+0C86:  MOV     #836,W4
+0C88:  MOV     W4,9B4
+0C8A:  MOV     #15E,W4
+0C8C:  MOV     W4,9B6
+0C8E:  CALL    7C6
+.................... 	printf("GET /TIMEGPRS/NOWTIME/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id); 
+0C92:  MOV     #0,W1
+0C94:  MOV     W1,W0
+0C96:  CALL    214
+0C9A:  INC     W1,W1
+0C9C:  MOV     W1,[W15++]
+0C9E:  BTSC.B  20F.1
+0CA0:  BRA     C9E
+0CA2:  MOV     W0,210
+0CA4:  MOV     [--W15],W1
+0CA6:  MOV     #15,W0
+0CA8:  CPSGT   W1,W0
+0CAA:  BRA     C94
+0CAC:  MOV     996,W0
+0CAE:  MOV     #0,W4
+0CB0:  CALL    B0C
+0CB4:  MOV     #18,W1
+0CB6:  MOV     W1,W0
+0CB8:  CALL    214
+0CBC:  INC     W1,W1
+0CBE:  MOV     W1,[W15++]
+0CC0:  BTSC.B  20F.1
+0CC2:  BRA     CC0
+0CC4:  MOV     W0,210
+0CC6:  MOV     [--W15],W1
+0CC8:  MOV     #44,W0
+0CCA:  CPSGT   W1,W0
+0CCC:  BRA     CB6
+....................  
+....................     do 
+....................     { 
+....................         InputBuffer[index]=getc();	 
+0CCE:  MOV     #836,W4
+0CD0:  MOV     99C,W3
+0CD2:  ADD     W3,W4,W5
+0CD4:  MOV     FE8,W6
+0CD6:  CALL    7E6
+0CDA:  MOV     W6,FE8
+0CDC:  MOV.B   W0L,[W5]
+.................... 		index++; 
+0CDE:  INC     099C
+....................     }while(index<350 && InputBuffer[index-1]!='$'); 
+0CE0:  MOV     99C,W4
+0CE2:  MOV     #15E,W3
+0CE4:  CP      W3,W4
+0CE6:  BRA     LE,CF6
+0CE8:  MOV     99C,W4
+0CEA:  SUB     W4,#1,W5
+0CEC:  MOV     #836,W4
+0CEE:  ADD     W5,W4,W0
+0CF0:  MOV.B   [W0],W4L
+0CF2:  XOR.B   #24,W4L
+0CF4:  BRA     NZ,CCE
+.................... 	//***Close data connection************ 
+.................... 	delay_ms(50); 
+0CF6:  MOV     #32,W0
+0CF8:  CALL    4D6
+.................... 	printf("+++\r\n"); 
+0CFC:  MOV     #0,W1
+0CFE:  MOV     W1,W0
+0D00:  CALL    260
+0D04:  INC     W1,W1
+0D06:  MOV     W1,[W15++]
+0D08:  BTSC.B  20F.1
+0D0A:  BRA     D08
+0D0C:  MOV     W0,210
+0D0E:  MOV     [--W15],W1
+0D10:  MOV     #4,W0
+0D12:  CPSGT   W1,W0
+0D14:  BRA     CFE
+.................... 	OERR=16; 
+0D16:  MOV.B   #10,W0L
+0D18:  MOV.B   W0L,20E
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+....................  
+.................... 	if(ValidateCommand(InputBuffer,index)==1)  
+0D1A:  MOV     #836,W4
+0D1C:  MOV     W4,9B0
+0D1E:  PUSH    99C
+0D20:  POP     9B2
+0D22:  CALL    880
+0D26:  MOV     W0,W5
+0D28:  CP      W5,#1
+0D2A:  BRA     NZ,DE6
+.................... 		{ 
+.................... 			lcd_putc("\fCMD OK"); 
+0D2C:  MOV     #0,W5
+0D2E:  MOV     W5,W0
+0D30:  CALL    136
+0D34:  IOR.B   #0,W0L
+0D36:  BTSC.B  42.1
+0D38:  BRA     D44
+0D3A:  INC     W5,W5
+0D3C:  MOV.B   W0L,9BC
+0D3E:  CALL    77A
+0D42:  BRA     D2E
+.................... 			delay_ms(ptime); 
+0D44:  MOV     994,W0
+0D46:  CALL    4D6
+....................  
+.................... 			*(DateTime)=(int)GetDecVal(InputBuffer,index,'d','y'); 
+0D4A:  MOV     998,W5
+0D4C:  MOV.B   #64,W0L
+0D4E:  MOV.B   W0L,9AE
+0D50:  MOV.B   #79,W0L
+0D52:  MOV.B   W0L,9AF
+0D54:  MOV     #836,W4
+0D56:  MOV     W4,9AA
+0D58:  PUSH    99C
+0D5A:  POP     9AC
+0D5C:  CALL    C06
+0D60:  MOV.B   W0L,[W5]
+.................... 			*(DateTime+1)=(int)GetDecVal(InputBuffer,index,'m','t'); 
+0D62:  MOV     998,W4
+0D64:  ADD     W4,#1,W4
+0D66:  MOV     W4,W0
+0D68:  MOV     W0,W5
+0D6A:  MOV.B   #6D,W0L
+0D6C:  MOV.B   W0L,9AE
+0D6E:  MOV.B   #74,W0L
+0D70:  MOV.B   W0L,9AF
+0D72:  MOV     #836,W4
+0D74:  MOV     W4,9AA
+0D76:  PUSH    99C
+0D78:  POP     9AC
+0D7A:  CALL    C06
+0D7E:  MOV.B   W0L,[W5]
+.................... 			*(DateTime+2)=(int)(GetDecVal(InputBuffer,index,'y','r')-2000); 
+0D80:  MOV     998,W4
+0D82:  ADD     W4,#2,W4
+0D84:  MOV     W4,W0
+0D86:  MOV     W0,W5
+0D88:  MOV.B   #79,W0L
+0D8A:  MOV.B   W0L,9AE
+0D8C:  MOV.B   #72,W0L
+0D8E:  MOV.B   W0L,9AF
+0D90:  MOV     #836,W4
+0D92:  MOV     W4,9AA
+0D94:  PUSH    99C
+0D96:  POP     9AC
+0D98:  CALL    C06
+0D9C:  MOV     W0,W6
+0D9E:  MOV     #7D0,W4
+0DA0:  SUB     W6,W4,W0
+0DA2:  MOV.B   W0L,[W5]
+.................... 			*(DateTime+3)=(int)GetDecVal(InputBuffer,index,'h','r'); 
+0DA4:  MOV     998,W4
+0DA6:  ADD     W4,#3,W4
+0DA8:  MOV     W4,W0
+0DAA:  MOV     W0,W5
+0DAC:  MOV.B   #68,W0L
+0DAE:  MOV.B   W0L,9AE
+0DB0:  MOV.B   #72,W0L
+0DB2:  MOV.B   W0L,9AF
+0DB4:  MOV     #836,W4
+0DB6:  MOV     W4,9AA
+0DB8:  PUSH    99C
+0DBA:  POP     9AC
+0DBC:  CALL    C06
+0DC0:  MOV.B   W0L,[W5]
+.................... 			*(DateTime+4)=(int)GetDecVal(InputBuffer,index,'m','n'); 
+0DC2:  MOV     998,W4
+0DC4:  ADD     W4,#4,W4
+0DC6:  MOV     W4,W0
+0DC8:  MOV     W0,W5
+0DCA:  MOV.B   #6D,W0L
+0DCC:  MOV.B   W0L,9AE
+0DCE:  MOV.B   #6E,W0L
+0DD0:  MOV.B   W0L,9AF
+0DD2:  MOV     #836,W4
+0DD4:  MOV     W4,9AA
+0DD6:  PUSH    99C
+0DD8:  POP     9AC
+0DDA:  CALL    C06
+0DDE:  MOV.B   W0L,[W5]
+....................  
+.................... 			status=1; 
+0DE0:  MOV     #1,W4
+0DE2:  MOV     W4,99A
+.................... 		} 
+....................  
+.................... 	else  
+0DE4:  BRA     DE8
+.................... 		{ 
+.................... 			status=0; 
+0DE6:  CLR     99A
+.................... 		} 
+.................... 	return status; 
+0DE8:  PUSH    99A
+0DEA:  POP     0
+....................  
+.................... } 
+0DEC:  MOV     [--W15],W6
+0DEE:  MOV     [--W15],W5
+0DF0:  RETURN  
+.................... /***********GetSunriseTime******************************** 
+.................... **   Description: Connects to server to obtain the      ** 
+.................... **     current sunrise time of the specified device     ** 
+.................... **                                                      ** 
+.................... **  Notes: incoming format:                             ** 
+.................... **  hr11mn52$ (11:52 a.m)                               ** 
+.................... *********************************************************/ 
+.................... void GetSunriseTime(int Id, byte* DateTime) 
+.................... { 
+*
+1200:  MOV     W5,[W15++]
+1202:  MOV     W6,[W15++]
+1204:  CLR     99A
+.................... 	int16 index=0; 
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+1206:  CLR.B   9B8
+1208:  MOV     #836,W4
+120A:  MOV     W4,9B4
+120C:  MOV     #15E,W4
+120E:  MOV     W4,9B6
+1210:  CALL    7C6
+.................... 	printf("AT+AIPA=1\r\n");        //Conect to internet 
+1214:  MOV     #0,W1
+1216:  MOV     W1,W0
+1218:  CALL    1A4
+121C:  INC     W1,W1
+121E:  MOV     W1,[W15++]
+1220:  BTSC.B  20F.1
+1222:  BRA     1220
+1224:  MOV     W0,210
+1226:  MOV     [--W15],W1
+1228:  MOV     #A,W0
+122A:  CPSGT   W1,W0
+122C:  BRA     1216
+.................... 	ReadBuffer(InputBuffer); 
+122E:  MOV     #836,W4
+1230:  MOV     W4,9B4
+1232:  CALL    7F4
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+.................... 	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+.................... 	//else lcd_putc("\fCMD BAD"); 
+.................... 	delay_ms(ptime); 
+1236:  MOV     994,W0
+1238:  CALL    4D6
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+123C:  CLR.B   9B8
+123E:  MOV     #836,W4
+1240:  MOV     W4,9B4
+1242:  MOV     #15E,W4
+1244:  MOV     W4,9B6
+1246:  CALL    7C6
+.................... 	printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server 
+124A:  MOV     #0,W1
+124C:  MOV     W1,W0
+124E:  CALL    1BC
+1252:  INC     W1,W1
+1254:  MOV     W1,[W15++]
+1256:  BTSC.B  20F.1
+1258:  BRA     1256
+125A:  MOV     W0,210
+125C:  MOV     [--W15],W1
+125E:  MOV     #30,W0
+1260:  CPSGT   W1,W0
+1262:  BRA     124C
+.................... 	ReadBuffer(InputBuffer); 
+1264:  MOV     #836,W4
+1266:  MOV     W4,9B4
+1268:  CALL    7F4
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+.................... 	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+.................... 	//else lcd_putc("\fCMD BAD"); 
+.................... 	delay_ms(ptime); 
+126C:  MOV     994,W0
+126E:  CALL    4D6
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+1272:  CLR.B   9B8
+1274:  MOV     #836,W4
+1276:  MOV     W4,9B4
+1278:  MOV     #15E,W4
+127A:  MOV     W4,9B6
+127C:  CALL    7C6
+.................... 	printf("GET /TIMEGPRS/GETSUNRISE/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id); 
+1280:  MOV     #0,W1
+1282:  MOV     W1,W0
+1284:  CALL    272
+1288:  INC     W1,W1
+128A:  MOV     W1,[W15++]
+128C:  BTSC.B  20F.1
+128E:  BRA     128C
+1290:  MOV     W0,210
+1292:  MOV     [--W15],W1
+1294:  MOV     #18,W0
+1296:  CPSGT   W1,W0
+1298:  BRA     1282
+129A:  MOV     996,W0
+129C:  MOV     #0,W4
+129E:  CALL    B0C
+12A2:  MOV     #1B,W1
+12A4:  MOV     W1,W0
+12A6:  CALL    272
+12AA:  INC     W1,W1
+12AC:  MOV     W1,[W15++]
+12AE:  BTSC.B  20F.1
+12B0:  BRA     12AE
+12B2:  MOV     W0,210
+12B4:  MOV     [--W15],W1
+12B6:  MOV     #47,W0
+12B8:  CPSGT   W1,W0
+12BA:  BRA     12A4
+....................  
+....................     do 
+....................     { 
+....................         InputBuffer[index]=getc();	 
+12BC:  MOV     #836,W4
+12BE:  MOV     99A,W3
+12C0:  ADD     W3,W4,W5
+12C2:  MOV     FE8,W6
+12C4:  CALL    7E6
+12C8:  MOV     W6,FE8
+12CA:  MOV.B   W0L,[W5]
+.................... 		index++; 
+12CC:  INC     099A
+....................     }while(index<350 && InputBuffer[index-1]!='$'); 
+12CE:  MOV     99A,W4
+12D0:  MOV     #15E,W3
+12D2:  CP      W3,W4
+12D4:  BRA     LE,12E4
+12D6:  MOV     99A,W4
+12D8:  SUB     W4,#1,W5
+12DA:  MOV     #836,W4
+12DC:  ADD     W5,W4,W0
+12DE:  MOV.B   [W0],W4L
+12E0:  XOR.B   #24,W4L
+12E2:  BRA     NZ,12BC
+....................  
+.................... 	if(ValidateCommand(InputBuffer,index)==1)  
+12E4:  MOV     #836,W4
+12E6:  MOV     W4,9B0
+12E8:  PUSH    99A
+12EA:  POP     9B2
+12EC:  CALL    880
+12F0:  MOV     W0,W5
+12F2:  CP      W5,#1
+12F4:  BRA     NZ,1332
+.................... 		{ 
+.................... 			//lcd_putc("\fCMD OK"); 
+.................... 			//delay_ms(ptime); 
+....................  
+.................... 			*(DateTime+3)=(int)GetDecVal(InputBuffer,index,'h','r'); 
+12F6:  MOV     998,W4
+12F8:  ADD     W4,#3,W4
+12FA:  MOV     W4,W0
+12FC:  MOV     W0,W5
+12FE:  MOV.B   #68,W0L
+1300:  MOV.B   W0L,9AE
+1302:  MOV.B   #72,W0L
+1304:  MOV.B   W0L,9AF
+1306:  MOV     #836,W4
+1308:  MOV     W4,9AA
+130A:  PUSH    99A
+130C:  POP     9AC
+130E:  CALL    C06
+1312:  MOV.B   W0L,[W5]
+.................... 			*(DateTime+4)=(int)GetDecVal(InputBuffer,index,'m','n'); 
+1314:  MOV     998,W4
+1316:  ADD     W4,#4,W4
+1318:  MOV     W4,W0
+131A:  MOV     W0,W5
+131C:  MOV.B   #6D,W0L
+131E:  MOV.B   W0L,9AE
+1320:  MOV.B   #6E,W0L
+1322:  MOV.B   W0L,9AF
+1324:  MOV     #836,W4
+1326:  MOV     W4,9AA
+1328:  PUSH    99A
+132A:  POP     9AC
+132C:  CALL    C06
+1330:  MOV.B   W0L,[W5]
+.................... 		} 
+....................  
+.................... 	//***Close data connection************ 
+.................... 	delay_ms(50); 
+1332:  MOV     #32,W0
+1334:  CALL    4D6
+.................... 	printf("+"); 
+1338:  BTSC.B  20F.1
+133A:  BRA     1338
+133C:  MOV     #2B,W4
+133E:  MOV     W4,210
+.................... 	printf("+"); 
+1340:  BTSC.B  20F.1
+1342:  BRA     1340
+1344:  MOV     #2B,W4
+1346:  MOV     W4,210
+.................... 	printf("+"); 
+1348:  BTSC.B  20F.1
+134A:  BRA     1348
+134C:  MOV     #2B,W4
+134E:  MOV     W4,210
+.................... 	OERR=16; 
+1350:  MOV.B   #10,W0L
+1352:  MOV.B   W0L,20E
+.................... 	ReadBuffer(InputBuffer); 
+1354:  MOV     #836,W4
+1356:  MOV     W4,9B4
+1358:  CALL    7F4
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+....................  
+.................... 	ClosePort(1); 
+135C:  MOV     #1,W4
+135E:  MOV     W4,9B0
+1360:  CALL    FAE
+....................  
+.................... } 
+1364:  MOV     [--W15],W6
+1366:  MOV     [--W15],W5
+1368:  RETURN  
+.................... /***********GetSunsetTime******************************** 
+.................... **   Description: Connects to server to obtain the      ** 
+.................... **     current sunset time of the specified device      ** 
+.................... **                                                      ** 
+.................... **  Notes: incoming format:                             ** 
+.................... **  hr11mn52$ (11:52 a.m)                               ** 
+.................... *********************************************************/ 
+.................... void GetSunsetTime(int Id, byte* DateTime) 
+.................... { 
+136A:  MOV     W5,[W15++]
+136C:  MOV     W6,[W15++]
+136E:  CLR     99A
+.................... 	int16 index=0; 
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+1370:  CLR.B   9B8
+1372:  MOV     #836,W4
+1374:  MOV     W4,9B4
+1376:  MOV     #15E,W4
+1378:  MOV     W4,9B6
+137A:  CALL    7C6
+.................... 	printf("AT+AIPA=1\r\n");        //Conect to internet 
+137E:  MOV     #0,W1
+1380:  MOV     W1,W0
+1382:  CALL    1A4
+1386:  INC     W1,W1
+1388:  MOV     W1,[W15++]
+138A:  BTSC.B  20F.1
+138C:  BRA     138A
+138E:  MOV     W0,210
+1390:  MOV     [--W15],W1
+1392:  MOV     #A,W0
+1394:  CPSGT   W1,W0
+1396:  BRA     1380
+.................... 	ReadBuffer(InputBuffer); 
+1398:  MOV     #836,W4
+139A:  MOV     W4,9B4
+139C:  CALL    7F4
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+.................... 	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+.................... 	//else lcd_putc("\fCMD BAD"); 
+.................... 	delay_ms(ptime); 
+13A0:  MOV     994,W0
+13A2:  CALL    4D6
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+13A6:  CLR.B   9B8
+13A8:  MOV     #836,W4
+13AA:  MOV     W4,9B4
+13AC:  MOV     #15E,W4
+13AE:  MOV     W4,9B6
+13B0:  CALL    7C6
+.................... 	printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server 
+13B4:  MOV     #0,W1
+13B6:  MOV     W1,W0
+13B8:  CALL    1BC
+13BC:  INC     W1,W1
+13BE:  MOV     W1,[W15++]
+13C0:  BTSC.B  20F.1
+13C2:  BRA     13C0
+13C4:  MOV     W0,210
+13C6:  MOV     [--W15],W1
+13C8:  MOV     #30,W0
+13CA:  CPSGT   W1,W0
+13CC:  BRA     13B6
+.................... 	ReadBuffer(InputBuffer); 
+13CE:  MOV     #836,W4
+13D0:  MOV     W4,9B4
+13D2:  CALL    7F4
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+.................... 	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+.................... 	//else lcd_putc("\fCMD BAD"); 
+.................... 	delay_ms(ptime); 
+13D6:  MOV     994,W0
+13D8:  CALL    4D6
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+13DC:  CLR.B   9B8
+13DE:  MOV     #836,W4
+13E0:  MOV     W4,9B4
+13E2:  MOV     #15E,W4
+13E4:  MOV     W4,9B6
+13E6:  CALL    7C6
+.................... 	printf("GET /TIMEGPRS/GETSUNSET/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id); 
+13EA:  MOV     #0,W1
+13EC:  MOV     W1,W0
+13EE:  CALL    2C0
+13F2:  INC     W1,W1
+13F4:  MOV     W1,[W15++]
+13F6:  BTSC.B  20F.1
+13F8:  BRA     13F6
+13FA:  MOV     W0,210
+13FC:  MOV     [--W15],W1
+13FE:  MOV     #17,W0
+1400:  CPSGT   W1,W0
+1402:  BRA     13EC
+1404:  MOV     996,W0
+1406:  MOV     #0,W4
+1408:  CALL    B0C
+140C:  MOV     #1A,W1
+140E:  MOV     W1,W0
+1410:  CALL    2C0
+1414:  INC     W1,W1
+1416:  MOV     W1,[W15++]
+1418:  BTSC.B  20F.1
+141A:  BRA     1418
+141C:  MOV     W0,210
+141E:  MOV     [--W15],W1
+1420:  MOV     #46,W0
+1422:  CPSGT   W1,W0
+1424:  BRA     140E
+....................  
+....................     do 
+....................     { 
+....................         InputBuffer[index]=getc();	 
+1426:  MOV     #836,W4
+1428:  MOV     99A,W3
+142A:  ADD     W3,W4,W5
+142C:  MOV     FE8,W6
+142E:  CALL    7E6
+1432:  MOV     W6,FE8
+1434:  MOV.B   W0L,[W5]
+.................... 		index++; 
+1436:  INC     099A
+....................     }while(index<350 && InputBuffer[index-1]!='$'); 
+1438:  MOV     99A,W4
+143A:  MOV     #15E,W3
+143C:  CP      W3,W4
+143E:  BRA     LE,144E
+1440:  MOV     99A,W4
+1442:  SUB     W4,#1,W5
+1444:  MOV     #836,W4
+1446:  ADD     W5,W4,W0
+1448:  MOV.B   [W0],W4L
+144A:  XOR.B   #24,W4L
+144C:  BRA     NZ,1426
+....................  
+.................... 	if(ValidateCommand(InputBuffer,index)==1)  
+144E:  MOV     #836,W4
+1450:  MOV     W4,9B0
+1452:  PUSH    99A
+1454:  POP     9B2
+1456:  CALL    880
+145A:  MOV     W0,W5
+145C:  CP      W5,#1
+145E:  BRA     NZ,149C
+.................... 		{ 
+.................... 			//lcd_putc("\fCMD OK"); 
+.................... 			//delay_ms(ptime); 
+....................  
+.................... 			*(DateTime+3)=(int)GetDecVal(InputBuffer,index,'h','r'); 
+1460:  MOV     998,W4
+1462:  ADD     W4,#3,W4
+1464:  MOV     W4,W0
+1466:  MOV     W0,W5
+1468:  MOV.B   #68,W0L
+146A:  MOV.B   W0L,9AE
+146C:  MOV.B   #72,W0L
+146E:  MOV.B   W0L,9AF
+1470:  MOV     #836,W4
+1472:  MOV     W4,9AA
+1474:  PUSH    99A
+1476:  POP     9AC
+1478:  CALL    C06
+147C:  MOV.B   W0L,[W5]
+.................... 			*(DateTime+4)=(int)GetDecVal(InputBuffer,index,'m','n'); 
+147E:  MOV     998,W4
+1480:  ADD     W4,#4,W4
+1482:  MOV     W4,W0
+1484:  MOV     W0,W5
+1486:  MOV.B   #6D,W0L
+1488:  MOV.B   W0L,9AE
+148A:  MOV.B   #6E,W0L
+148C:  MOV.B   W0L,9AF
+148E:  MOV     #836,W4
+1490:  MOV     W4,9AA
+1492:  PUSH    99A
+1494:  POP     9AC
+1496:  CALL    C06
+149A:  MOV.B   W0L,[W5]
+.................... 		} 
+....................  
+.................... 	//***Close data connection************ 
+.................... 	delay_ms(50); 
+149C:  MOV     #32,W0
+149E:  CALL    4D6
+.................... 	printf("+"); 
+14A2:  BTSC.B  20F.1
+14A4:  BRA     14A2
+14A6:  MOV     #2B,W4
+14A8:  MOV     W4,210
+.................... 	printf("+"); 
+14AA:  BTSC.B  20F.1
+14AC:  BRA     14AA
+14AE:  MOV     #2B,W4
+14B0:  MOV     W4,210
+.................... 	printf("+"); 
+14B2:  BTSC.B  20F.1
+14B4:  BRA     14B2
+14B6:  MOV     #2B,W4
+14B8:  MOV     W4,210
+.................... 	OERR=16; 
+14BA:  MOV.B   #10,W0L
+14BC:  MOV.B   W0L,20E
+.................... 	ReadBuffer(InputBuffer); 
+14BE:  MOV     #836,W4
+14C0:  MOV     W4,9B4
+14C2:  CALL    7F4
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+.................... 	delay_ms(50); 
+14C6:  MOV     #32,W0
+14C8:  CALL    4D6
+.................... 	ClosePort(1); 
+14CC:  MOV     #1,W4
+14CE:  MOV     W4,9B0
+14D0:  CALL    FAE
+.................... } 
+14D4:  MOV     [--W15],W6
+14D6:  MOV     [--W15],W5
+14D8:  RETURN  
+....................  
+.................... /***********GetMode*************************************** 
+.................... **   Description: Connects to server to obtain the      ** 
+.................... **     current datetime of the specified device         ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... void GetMode(int Id, int* mod,int state) 
+.................... { 
+*
+0FF8:  MOV     W5,[W15++]
+0FFA:  MOV     W6,[W15++]
+0FFC:  CLR     99C
+0FFE:  CLR     99E
+.................... 	int status=0; 
+.................... 	int16 index=0; 
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+1000:  CLR.B   9B8
+1002:  MOV     #836,W4
+1004:  MOV     W4,9B4
+1006:  MOV     #15E,W4
+1008:  MOV     W4,9B6
+100A:  CALL    7C6
+.................... 	printf("AT+AIPA=1\r\n");        //Conect to internet 
+100E:  MOV     #0,W1
+1010:  MOV     W1,W0
+1012:  CALL    1A4
+1016:  INC     W1,W1
+1018:  MOV     W1,[W15++]
+101A:  BTSC.B  20F.1
+101C:  BRA     101A
+101E:  MOV     W0,210
+1020:  MOV     [--W15],W1
+1022:  MOV     #A,W0
+1024:  CPSGT   W1,W0
+1026:  BRA     1010
+.................... 	ReadBuffer(InputBuffer); 
+1028:  MOV     #836,W4
+102A:  MOV     W4,9B4
+102C:  CALL    7F4
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+.................... 	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+.................... 	//else lcd_putc("\fCMD BAD"); 
+.................... 	delay_ms(ptime); 
+1030:  MOV     994,W0
+1032:  CALL    4D6
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+1036:  CLR.B   9B8
+1038:  MOV     #836,W4
+103A:  MOV     W4,9B4
+103C:  MOV     #15E,W4
+103E:  MOV     W4,9B6
+1040:  CALL    7C6
+.................... 	printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server 
+1044:  MOV     #0,W1
+1046:  MOV     W1,W0
+1048:  CALL    1BC
+104C:  INC     W1,W1
+104E:  MOV     W1,[W15++]
+1050:  BTSC.B  20F.1
+1052:  BRA     1050
+1054:  MOV     W0,210
+1056:  MOV     [--W15],W1
+1058:  MOV     #30,W0
+105A:  CPSGT   W1,W0
+105C:  BRA     1046
+.................... 	ReadBuffer(InputBuffer); 
+105E:  MOV     #836,W4
+1060:  MOV     W4,9B4
+1062:  CALL    7F4
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+.................... 	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+.................... 	//else lcd_putc("\fCMD BAD"); 
+.................... 	delay_ms(ptime); 
+1066:  MOV     994,W0
+1068:  CALL    4D6
+....................  
+.................... 	//**************GET REQUEST TO OBTAIN MODE**************** 
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+106C:  CLR.B   9B8
+106E:  MOV     #836,W4
+1070:  MOV     W4,9B4
+1072:  MOV     #15E,W4
+1074:  MOV     W4,9B6
+1076:  CALL    7C6
+.................... 	printf("GET /DEVICEGPRS/GETMODE/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id); 
+107A:  MOV     #0,W1
+107C:  MOV     W1,W0
+107E:  CALL    30C
+1082:  INC     W1,W1
+1084:  MOV     W1,[W15++]
+1086:  BTSC.B  20F.1
+1088:  BRA     1086
+108A:  MOV     W0,210
+108C:  MOV     [--W15],W1
+108E:  MOV     #17,W0
+1090:  CPSGT   W1,W0
+1092:  BRA     107C
+1094:  MOV     996,W0
+1096:  MOV     #0,W4
+1098:  CALL    B0C
+109C:  MOV     #1A,W1
+109E:  MOV     W1,W0
+10A0:  CALL    30C
+10A4:  INC     W1,W1
+10A6:  MOV     W1,[W15++]
+10A8:  BTSC.B  20F.1
+10AA:  BRA     10A8
+10AC:  MOV     W0,210
+10AE:  MOV     [--W15],W1
+10B0:  MOV     #46,W0
+10B2:  CPSGT   W1,W0
+10B4:  BRA     109E
+.................... 	while(getc()!='\n'); 
+10B6:  CALL    7E6
+10BA:  CP.B    W0L,#A
+10BC:  BRA     NZ,10B6
+.................... 	do 
+.................... 	{ 
+.................... 		InputBuffer[index]=getc(); 
+10BE:  MOV     #836,W4
+10C0:  MOV     99E,W3
+10C2:  ADD     W3,W4,W5
+10C4:  MOV     FE8,W6
+10C6:  CALL    7E6
+10CA:  MOV     W6,FE8
+10CC:  MOV.B   W0L,[W5]
+.................... 		index++; 
+10CE:  INC     099E
+.................... 	}while(index<350 && InputBuffer[index-1]!='$'); 
+10D0:  MOV     99E,W4
+10D2:  MOV     #15E,W3
+10D4:  CP      W3,W4
+10D6:  BRA     LE,10E6
+10D8:  MOV     99E,W4
+10DA:  SUB     W4,#1,W5
+10DC:  MOV     #836,W4
+10DE:  ADD     W5,W4,W0
+10E0:  MOV.B   [W0],W4L
+10E2:  XOR.B   #24,W4L
+10E4:  BRA     NZ,10BE
+....................  
+.................... 	OERR=16; 
+10E6:  MOV.B   #10,W0L
+10E8:  MOV.B   W0L,20E
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+....................  
+.................... 	if(ValidateCommand(InputBuffer,index)==1)  
+10EA:  MOV     #836,W4
+10EC:  MOV     W4,9B0
+10EE:  PUSH    99E
+10F0:  POP     9B2
+10F2:  CALL    880
+10F6:  MOV     W0,W5
+10F8:  CP      W5,#1
+10FA:  BRA     NZ,1118
+.................... 		{ 
+.................... 			*mod=(int)GetDecVal(InputBuffer,index,'m','d'); 
+10FC:  MOV     998,W5
+10FE:  MOV.B   #6D,W0L
+1100:  MOV.B   W0L,9AE
+1102:  MOV.B   #64,W0L
+1104:  MOV.B   W0L,9AF
+1106:  MOV     #836,W4
+1108:  MOV     W4,9AA
+110A:  PUSH    99E
+110C:  POP     9AC
+110E:  CALL    C06
+1112:  MOV     W0,[W5]
+.................... 			status=1; 
+1114:  MOV     #1,W4
+1116:  MOV     W4,99C
+.................... 		} 
+....................  
+.................... 	//**************GET REQUEST TO OBTAIN STATUS************** 
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+1118:  CLR.B   9B8
+111A:  MOV     #836,W4
+111C:  MOV     W4,9B4
+111E:  MOV     #15E,W4
+1120:  MOV     W4,9B6
+1122:  CALL    7C6
+.................... 	index=0; 
+1126:  CLR     99E
+.................... 	printf("GET /DEVICEGPRS/GETSTATUS/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id); 
+1128:  MOV     #0,W1
+112A:  MOV     W1,W0
+112C:  CALL    358
+1130:  INC     W1,W1
+1132:  MOV     W1,[W15++]
+1134:  BTSC.B  20F.1
+1136:  BRA     1134
+1138:  MOV     W0,210
+113A:  MOV     [--W15],W1
+113C:  MOV     #19,W0
+113E:  CPSGT   W1,W0
+1140:  BRA     112A
+1142:  MOV     996,W0
+1144:  MOV     #0,W4
+1146:  CALL    B0C
+114A:  MOV     #1C,W1
+114C:  MOV     W1,W0
+114E:  CALL    358
+1152:  INC     W1,W1
+1154:  MOV     W1,[W15++]
+1156:  BTSC.B  20F.1
+1158:  BRA     1156
+115A:  MOV     W0,210
+115C:  MOV     [--W15],W1
+115E:  MOV     #48,W0
+1160:  CPSGT   W1,W0
+1162:  BRA     114C
+.................... 	while(getc()!='\n'); 
+1164:  CALL    7E6
+1168:  CP.B    W0L,#A
+116A:  BRA     NZ,1164
+.................... 	do 
+.................... 	{ 
+.................... 		InputBuffer[index]=getc(); 
+116C:  MOV     #836,W4
+116E:  MOV     99E,W3
+1170:  ADD     W3,W4,W5
+1172:  MOV     FE8,W6
+1174:  CALL    7E6
+1178:  MOV     W6,FE8
+117A:  MOV.B   W0L,[W5]
+.................... 		index++; 
+117C:  INC     099E
+.................... 	}while(index<350 && InputBuffer[index-1]!='$'); 
+117E:  MOV     99E,W4
+1180:  MOV     #15E,W3
+1182:  CP      W3,W4
+1184:  BRA     LE,1194
+1186:  MOV     99E,W4
+1188:  SUB     W4,#1,W5
+118A:  MOV     #836,W4
+118C:  ADD     W5,W4,W0
+118E:  MOV.B   [W0],W4L
+1190:  XOR.B   #24,W4L
+1192:  BRA     NZ,116C
+....................  
+.................... 	if(ValidateCommand(InputBuffer,index)==1)  
+1194:  MOV     #836,W4
+1196:  MOV     W4,9B0
+1198:  PUSH    99E
+119A:  POP     9B2
+119C:  CALL    880
+11A0:  MOV     W0,W5
+11A2:  CP      W5,#1
+11A4:  BRA     NZ,11C2
+.................... 		{ 
+.................... 			*state=(int)GetDecVal(InputBuffer,index,'s','t'); 
+11A6:  MOV     99A,W5
+11A8:  MOV.B   #73,W0L
+11AA:  MOV.B   W0L,9AE
+11AC:  MOV.B   #74,W0L
+11AE:  MOV.B   W0L,9AF
+11B0:  MOV     #836,W4
+11B2:  MOV     W4,9AA
+11B4:  PUSH    99E
+11B6:  POP     9AC
+11B8:  CALL    C06
+11BC:  MOV.B   W0L,[W5]
+.................... 			status=1; 
+11BE:  MOV     #1,W4
+11C0:  MOV     W4,99C
+.................... 		} 
+....................  
+.................... 	//***Close data connection************ 
+.................... 	delay_ms(50); 
+11C2:  MOV     #32,W0
+11C4:  CALL    4D6
+.................... 	printf("+"); 
+11C8:  BTSC.B  20F.1
+11CA:  BRA     11C8
+11CC:  MOV     #2B,W4
+11CE:  MOV     W4,210
+.................... 	printf("+"); 
+11D0:  BTSC.B  20F.1
+11D2:  BRA     11D0
+11D4:  MOV     #2B,W4
+11D6:  MOV     W4,210
+.................... 	printf("+"); 
+11D8:  BTSC.B  20F.1
+11DA:  BRA     11D8
+11DC:  MOV     #2B,W4
+11DE:  MOV     W4,210
+.................... 	OERR=16; 
+11E0:  MOV.B   #10,W0L
+11E2:  MOV.B   W0L,20E
+.................... 	ReadBuffer(InputBuffer); 
+11E4:  MOV     #836,W4
+11E6:  MOV     W4,9B4
+11E8:  CALL    7F4
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+.................... 	delay_ms(50); 
+11EC:  MOV     #32,W0
+11EE:  CALL    4D6
+.................... 	ClosePort(1); 
+11F2:  MOV     #1,W4
+11F4:  MOV     W4,9B0
+11F6:  CALL    FAE
+.................... } 
+11FA:  MOV     [--W15],W6
+11FC:  MOV     [--W15],W5
+11FE:  RETURN  
+....................  
+.................... /***********ReportData************************************ 
+.................... **   Description: Connects to server to report the      ** 
+.................... **     current consuptions of current and voltage       ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... void ReportData(int Id, int state,float curr,float volt) 
+.................... { 
+*
+1A7C:  MOV     W5,[W15++]
+1A7E:  MOV     W6,[W15++]
+1A80:  CLR     9A2
+.................... 	int16 index=0; 
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+1A82:  CLR.B   9B8
+1A84:  MOV     #836,W4
+1A86:  MOV     W4,9B4
+1A88:  MOV     #15E,W4
+1A8A:  MOV     W4,9B6
+1A8C:  CALL    7C6
+.................... 	printf("AT+AIPA=1\r\n");        //Conect to internet 
+1A90:  MOV     #0,W1
+1A92:  MOV     W1,W0
+1A94:  CALL    1A4
+1A98:  INC     W1,W1
+1A9A:  MOV     W1,[W15++]
+1A9C:  BTSC.B  20F.1
+1A9E:  BRA     1A9C
+1AA0:  MOV     W0,210
+1AA2:  MOV     [--W15],W1
+1AA4:  MOV     #A,W0
+1AA6:  CPSGT   W1,W0
+1AA8:  BRA     1A92
+.................... 	ReadBuffer(InputBuffer); 
+1AAA:  MOV     #836,W4
+1AAC:  MOV     W4,9B4
+1AAE:  CALL    7F4
+.................... 	PrintBuffer(InputBuffer,ptime); 
+1AB2:  MOV     #836,W4
+1AB4:  MOV     W4,9B0
+1AB6:  PUSH    994
+1AB8:  POP     9B2
+1ABA:  CALL    846
+.................... 	if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+1ABE:  MOV     #1E,W4
+1AC0:  MOV     W4,9B2
+1AC2:  MOV     #836,W4
+1AC4:  MOV     W4,9B0
+1AC6:  CALL    880
+1ACA:  MOV     W0,W5
+1ACC:  CP      W5,#1
+1ACE:  BRA     NZ,1AEA
+1AD0:  MOV     #0,W5
+1AD2:  MOV     W5,W0
+1AD4:  CALL    136
+1AD8:  IOR.B   #0,W0L
+1ADA:  BTSC.B  42.1
+1ADC:  BRA     1AE8
+1ADE:  INC     W5,W5
+1AE0:  MOV.B   W0L,9BC
+1AE2:  CALL    77A
+1AE6:  BRA     1AD2
+.................... 	else lcd_putc("\fCMD BAD"); 
+1AE8:  BRA     1B02
+1AEA:  MOV     #0,W5
+1AEC:  MOV     W5,W0
+1AEE:  CALL    14A
+1AF2:  IOR.B   #0,W0L
+1AF4:  BTSC.B  42.1
+1AF6:  BRA     1B02
+1AF8:  INC     W5,W5
+1AFA:  MOV.B   W0L,9BC
+1AFC:  CALL    77A
+1B00:  BRA     1AEC
+.................... 	delay_ms(ptime); 
+1B02:  MOV     994,W0
+1B04:  CALL    4D6
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+1B08:  CLR.B   9B8
+1B0A:  MOV     #836,W4
+1B0C:  MOV     W4,9B4
+1B0E:  MOV     #15E,W4
+1B10:  MOV     W4,9B6
+1B12:  CALL    7C6
+.................... 	printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server 
+1B16:  MOV     #0,W1
+1B18:  MOV     W1,W0
+1B1A:  CALL    1BC
+1B1E:  INC     W1,W1
+1B20:  MOV     W1,[W15++]
+1B22:  BTSC.B  20F.1
+1B24:  BRA     1B22
+1B26:  MOV     W0,210
+1B28:  MOV     [--W15],W1
+1B2A:  MOV     #30,W0
+1B2C:  CPSGT   W1,W0
+1B2E:  BRA     1B18
+.................... 	ReadBuffer(InputBuffer); 
+1B30:  MOV     #836,W4
+1B32:  MOV     W4,9B4
+1B34:  CALL    7F4
+.................... 	PrintBuffer(InputBuffer,ptime); 
+1B38:  MOV     #836,W4
+1B3A:  MOV     W4,9B0
+1B3C:  PUSH    994
+1B3E:  POP     9B2
+1B40:  CALL    846
+.................... 	if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+1B44:  MOV     #1E,W4
+1B46:  MOV     W4,9B2
+1B48:  MOV     #836,W4
+1B4A:  MOV     W4,9B0
+1B4C:  CALL    880
+1B50:  MOV     W0,W5
+1B52:  CP      W5,#1
+1B54:  BRA     NZ,10C
+1B56:  MOV     #0,W5
+1B58:  MOV     W5,W0
+1B5A:  CALL    136
+1B5E:  IOR.B   #0,W0L
+1B60:  BTSC.B  42.1
+1B62:  BRA     1B6E
+1B64:  INC     W5,W5
+1B66:  MOV.B   W0L,9BC
+1B68:  CALL    77A
+1B6C:  BRA     1B58
+.................... 	else lcd_putc("\fCMD BAD"); 
+1B6E:  BRA     1B88
+1B70:  MOV     #0,W5
+1B72:  MOV     W5,W0
+1B74:  CALL    14A
+1B78:  IOR.B   #0,W0L
+1B7A:  BTSC.B  42.1
+1B7C:  BRA     1B88
+1B7E:  INC     W5,W5
+1B80:  MOV.B   W0L,9BC
+1B82:  CALL    77A
+1B86:  BRA     1B72
+.................... 	delay_ms(ptime); 
+1B88:  MOV     994,W0
+1B8A:  CALL    4D6
+....................  
+.................... 	//**************GET REQUEST TO OBTAIN MODE**************** 
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer /monitoringgprs/create?id=14&status=0&current=1&voltage=2 
+1B8E:  CLR.B   9B8
+1B90:  MOV     #836,W4
+1B92:  MOV     W4,9B4
+1B94:  MOV     #15E,W4
+1B96:  MOV     W4,9B6
+1B98:  CALL    7C6
+.................... 	printf("GET /MONITORINGGPRS/CREATE?ID=%d&STATUS=%d&CURRENT=%3.2f&VOLTAGE=%3.2f HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id,state,curr,volt); 
+1B9C:  MOV     #0,W1
+1B9E:  MOV     W1,W0
+1BA0:  CALL    3A6
+1BA4:  INC     W1,W1
+1BA6:  MOV     W1,[W15++]
+1BA8:  BTSC.B  20F.1
+1BAA:  BRA     1BA8
+1BAC:  MOV     W0,210
+1BAE:  MOV     [--W15],W1
+1BB0:  MOV     #1D,W0
+1BB2:  CPSGT   W1,W0
+1BB4:  BRA     1B9E
+1BB6:  MOV     996,W0
+1BB8:  MOV     #0,W4
+1BBA:  CALL    B0C
+1BBE:  MOV     #20,W1
+1BC0:  MOV     W1,W0
+1BC2:  CALL    3A6
+1BC6:  INC     W1,W1
+1BC8:  MOV     W1,[W15++]
+1BCA:  BTSC.B  20F.1
+1BCC:  BRA     1BCA
+1BCE:  MOV     W0,210
+1BD0:  MOV     [--W15],W1
+1BD2:  MOV     #27,W0
+1BD4:  CPSGT   W1,W0
+1BD6:  BRA     1BC0
+1BD8:  MOV     998,W0
+1BDA:  MOV     #0,W4
+1BDC:  CALL    B0C
+1BE0:  MOV     #2A,W1
+1BE2:  MOV     W1,W0
+1BE4:  CALL    3A6
+1BE8:  INC     W1,W1
+1BEA:  MOV     W1,[W15++]
+1BEC:  BTSC.B  20F.1
+1BEE:  BRA     1BEC
+1BF0:  MOV     W0,210
+1BF2:  MOV     [--W15],W1
+1BF4:  MOV     #32,W0
+1BF6:  CPSGT   W1,W0
+1BF8:  BRA     1BE2
+1BFA:  MOV     99C,W2
+1BFC:  MOV     99A,W1
+1BFE:  MOV     #0,W0
+1C00:  CALL    153A
+1C04:  MOV     #2,W9
+1C06:  MOV     #2,W10
+1C08:  CALL    18FA
+1C0C:  MOV     #38,W1
+1C0E:  MOV     W1,W0
+1C10:  CALL    3A6
+1C14:  INC     W1,W1
+1C16:  MOV     W1,[W15++]
+1C18:  BTSC.B  20F.1
+1C1A:  BRA     1C18
+1C1C:  MOV     W0,210
+1C1E:  MOV     [--W15],W1
+1C20:  MOV     #40,W0
+1C22:  CPSGT   W1,W0
+1C24:  BRA     1C0E
+1C26:  MOV     9A0,W2
+1C28:  MOV     99E,W1
+1C2A:  MOV     #0,W0
+1C2C:  CALL    153A
+1C30:  MOV     #2,W9
+1C32:  MOV     #2,W10
+1C34:  CALL    18FA
+1C38:  MOV     #46,W1
+1C3A:  MOV     W1,W0
+1C3C:  CALL    3A6
+1C40:  INC     W1,W1
+1C42:  MOV     W1,[W15++]
+1C44:  BTSC.B  20F.1
+1C46:  BRA     1C44
+1C48:  MOV     W0,210
+1C4A:  MOV     [--W15],W1
+1C4C:  MOV     #72,W0
+1C4E:  CPSGT   W1,W0
+1C50:  BRA     1C3A
+.................... 	while(getc()!='\n'); 
+1C52:  CALL    7E6
+1C56:  CP.B    W0L,#A
+1C58:  BRA     NZ,1C52
+.................... 	do 
+.................... 	{ 
+.................... 		InputBuffer[index]=getc(); 
+1C5A:  MOV     #836,W4
+1C5C:  MOV     9A2,W3
+1C5E:  ADD     W3,W4,W5
+1C60:  MOV     FE8,W6
+1C62:  CALL    7E6
+1C66:  MOV     W6,FE8
+1C68:  MOV.B   W0L,[W5]
+.................... 		index++; 
+1C6A:  INC     09A2
+.................... 	}while(index<350 && InputBuffer[index-1]!='$'); 
+1C6C:  MOV     9A2,W4
+1C6E:  MOV     #15E,W3
+1C70:  CP      W3,W4
+1C72:  BRA     LE,1C82
+1C74:  MOV     9A2,W4
+1C76:  SUB     W4,#1,W5
+1C78:  MOV     #836,W4
+1C7A:  ADD     W5,W4,W0
+1C7C:  MOV.B   [W0],W4L
+1C7E:  XOR.B   #24,W4L
+1C80:  BRA     NZ,1C5A
+....................  
+.................... 	//***Close data connection************ 
+.................... 	delay_ms(50); 
+1C82:  MOV     #32,W0
+1C84:  CALL    4D6
+.................... 	printf("+++\r\n"); 
+1C88:  MOV     #0,W1
+1C8A:  MOV     W1,W0
+1C8C:  CALL    260
+1C90:  INC     W1,W1
+1C92:  MOV     W1,[W15++]
+1C94:  BTSC.B  20F.1
+1C96:  BRA     1C94
+1C98:  MOV     W0,210
+1C9A:  MOV     [--W15],W1
+1C9C:  MOV     #4,W0
+1C9E:  CPSGT   W1,W0
+1CA0:  BRA     1C8A
+.................... 	OERR=16; 
+1CA2:  MOV.B   #10,W0L
+1CA4:  MOV.B   W0L,20E
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+....................  
+.................... 	PrintBuffer(InputBuffer,1000); 
+1CA6:  MOV     #836,W4
+1CA8:  MOV     W4,9B0
+1CAA:  MOV     #3E8,W4
+1CAC:  MOV     W4,9B2
+1CAE:  CALL    846
+....................  
+.................... 	ClosePort(1); 
+1CB2:  MOV     #1,W4
+1CB4:  MOV     W4,9B0
+1CB6:  CALL    FAE
+.................... } 
+1CBA:  MOV     [--W15],W6
+1CBC:  MOV     [--W15],W5
+1CBE:  RETURN  
+....................  
+.................... /***********CreateAlert*********************************** 
+.................... **   Description: Connects to server to report the      ** 
+.................... **     current alert detected by the device             ** 
+.................... **                                                      ** 
+.................... *********************************************************/ 
+.................... void CreateAlert(int Id, int type) 
+.................... { 
+.................... 	int16 index=0; 
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+.................... 	printf("AT+AIPA=1\r\n");        //Conect to internet 
+.................... 	ReadBuffer(InputBuffer); 
+.................... 	PrintBuffer(InputBuffer,ptime); 
+.................... 	if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+.................... 	else lcd_putc("\fCMD BAD"); 
+.................... 	delay_ms(ptime); 
+....................  
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer 
+.................... 	printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server 
+.................... 	ReadBuffer(InputBuffer); 
+.................... 	PrintBuffer(InputBuffer,ptime); 
+.................... 	if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK"); 
+.................... 	else lcd_putc("\fCMD BAD"); 
+.................... 	delay_ms(ptime); 
+....................  
+.................... 	//**************GET REQUEST TO OBTAIN MODE**************** 
+.................... 	FillArray(InputBuffer,350,0);  //Clear input_buffer /monitoringgprs/create?id=14&status=0&current=1&voltage=2 
+.................... 	printf("GET /ALERTGGPRS/CREATE?ID=%d&TYPE=%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id,type); 
+.................... 	while(getc()!='\n'); 
+.................... 	do 
+.................... 	{ 
+.................... 		InputBuffer[index]=getc(); 
+.................... 		index++; 
+.................... 	}while(index<350 && InputBuffer[index-1]!='$'); 
+....................  
+.................... 	//***Close data connection************ 
+.................... 	delay_ms(50); 
+.................... 	printf("+++\r\n"); 
+.................... 	OERR=16; 
+.................... 	//PrintBuffer(InputBuffer,ptime); 
+.................... 	PrintBuffer(InputBuffer,1000); 
+....................  
+.................... 	ClosePort(1); 
+.................... } 
+....................  
+....................  
+....................  
+.................... /******************Main function, program****************/ 
+.................... void main(void) 
+.................... {	 
+1CC0:  BSET.B  81.7
+1CC2:  MOV     #8000,W4
+1CC4:  MOV     W4,20C
+1CC6:  MOV     #400,W4
+1CC8:  MOV     W4,20E
+1CCA:  MOV     #3,W4
+1CCC:  MOV     W4,214
+1CCE:  CLR     802
+1CD0:  MOV     #1,W4
+1CD2:  MOV     W4,804
+1CD4:  MOV     #1,W4
+1CD6:  MOV     W4,806
+1CD8:  CLR     808
+1CDA:  CLR     80C
+1CDC:  CLR     80E
+1CDE:  CLR     810
+1CE0:  MOV     #E,W4
+1CE2:  MOV     W4,812
+1CE4:  CLR     814
+1CE6:  CLR     816
+1CE8:  CLR     818
+1CEA:  CLR     81A
+1CEC:  CLR     81C
+1CEE:  CLR     81E
+1CF0:  CLR     820
+1CF2:  CLR.B   834
+1CF4:  MOV     #64,W4
+1CF6:  MOV     W4,994
+1CF8:  SETM    2A8
+1CFA:  MOV     #F80,W15
+1CFC:  MOV     #FFF,W0
+1CFE:  MOV     W0,20
+1D00:  NOP     
+....................  
+.................... 	//***Component initializers**** 
+.................... 	lcd_init();        //LCD INITIALIZE 
+*
+1E86:  CALL    608
+.................... 	//init_dac();      //MPC4921 DAC INITIALIZE 
+.................... 	rtc_init();		   //DS1302 RTC INITIALIZE 
+1E8A:  CALL    70C
+....................  
+.................... 	//***Device initialize********* 
+.................... 	lcd_putc("\fTelegestion UTCH"); 
+1E8E:  MOV     #0,W5
+1E90:  MOV     W5,W0
+1E92:  CALL    410
+1E96:  IOR.B   #0,W0L
+1E98:  BTSC.B  42.1
+1E9A:  BRA     1EA6
+1E9C:  INC     W5,W5
+1E9E:  MOV.B   W0L,9BC
+1EA0:  CALL    77A
+1EA4:  BRA     1E90
+.................... 	delay_ms(100); 
+1EA6:  MOV     #64,W0
+1EA8:  CALL    4D6
+.................... 	setup_adc_ports(sAN0|sAN1|sAN2);//*******Setup ch0 and ch1 as ADC inputs in Px and Py****** 
+1EAC:  MOV     #FFF8,W4
+1EAE:  MOV     W4,2A8
+1EB0:  CLR     2A2
+.................... 	setup_adc(ADC_CLOCK_INTERNAL); 
+1EB2:  MOV     #80,W4
+1EB4:  MOV     W4,2A4
+1EB6:  MOV     #80E0,W4
+1EB8:  MOV     W4,2A0
+....................  
+.................... 	//******Configure PORTB*********** 
+.................... 	SET_TRIS_B(0x0007);   //PB0, PB1 as input, PB2-PB15 as output (0b0000000000000011) 
+1EBA:  MOV     #7,W4
+1EBC:  MOV     W4,2C6
+....................  
+.................... 	//******Clear RS232 error********** 
+.................... 	OERR=16; 
+1EBE:  MOV.B   #10,W0L
+1EC0:  MOV.B   W0L,20E
+....................  
+.................... 	//******Configure GPRS device****** 
+.................... 	ConfigureGPRS(); 
+1EC2:  CALL    8BA
+....................  
+.................... 	//******Set datetime***************** 
+.................... 	switch(ConfigureDatetime(Device_Id, DateTime)) 
+.................... 	{ 
+1EC6:  PUSH    812
+1EC8:  POP     996
+1ECA:  MOV     #822,W4
+1ECC:  MOV     W4,998
+1ECE:  CALL    C7C
+1ED2:  XOR     #0,W0
+1ED4:  BRA     Z,1EDC
+1ED6:  XOR     #1,W0
+1ED8:  BRA     Z,1EF6
+1EDA:  BRA     1FAC
+.................... 		case 0: 
+.................... 			lcd_putc("\fCMD BAD"); 
+1EDC:  MOV     #0,W5
+1EDE:  MOV     W5,W0
+1EE0:  CALL    14A
+1EE4:  IOR.B   #0,W0L
+1EE6:  BTSC.B  42.1
+1EE8:  BRA     1EF4
+1EEA:  INC     W5,W5
+1EEC:  MOV.B   W0L,9BC
+1EEE:  CALL    77A
+1EF2:  BRA     1EDE
+.................... 		break; 
+1EF4:  BRA     1FC6
+.................... 		case 1: 
+.................... 			rtc_set_datetime(DateTime[day_],DateTime[month_],DateTime[year_],dow1,DateTime[hour_],DateTime[min_]); 
+1EF6:  MOV.B   822,W0L
+1EF8:  MOV.B   W0L,996
+1EFA:  MOV.B   823,W0L
+1EFC:  MOV.B   W0L,997
+1EFE:  MOV.B   824,W0L
+1F00:  MOV.B   W0L,998
+1F02:  MOV.B   834,W0L
+1F04:  MOV.B   W0L,999
+1F06:  MOV.B   825,W0L
+1F08:  MOV.B   W0L,99A
+1F0A:  MOV.B   826,W0L
+1F0C:  MOV.B   W0L,99B
+1F0E:  CALL    E16
+.................... 			lcd_putc("\f"); 
+1F12:  MOV     #0,W5
+1F14:  MOV     W5,W0
+1F16:  CALL    110
+1F1A:  IOR.B   #0,W0L
+1F1C:  BTSC.B  42.1
+1F1E:  BRA     1F2A
+1F20:  INC     W5,W5
+1F22:  MOV.B   W0L,9BC
+1F24:  CALL    77A
+1F28:  BRA     1F14
+.................... 			lcd_putc("Datetime:\n"); 
+1F2A:  MOV     #0,W5
+1F2C:  MOV     W5,W0
+1F2E:  CALL    42E
+1F32:  IOR.B   #0,W0L
+1F34:  BTSC.B  42.1
+1F36:  BRA     1F42
+1F38:  INC     W5,W5
+1F3A:  MOV.B   W0L,9BC
+1F3C:  CALL    77A
+1F40:  BRA     1F2C
+.................... 			printf(lcd_putc,"%d/%d/20%d %02d:%02d",DateTime[day_],DateTime[month_],DateTime[year_],DateTime[hour_],DateTime[min_]); 
+1F42:  MOV.B   822,W0L
+1F44:  SE      W0,W0
+1F46:  MOV     #0,W4
+1F48:  CALL    EB4
+1F4C:  MOV.B   #2F,W0L
+1F4E:  MOV.B   W0L,9BC
+1F50:  CALL    77A
+1F54:  MOV.B   823,W0L
+1F56:  SE      W0,W0
+1F58:  MOV     #0,W4
+1F5A:  CALL    EB4
+1F5E:  MOV.B   #2F,W0L
+1F60:  MOV.B   W0L,9BC
+1F62:  CALL    77A
+1F66:  MOV.B   #32,W0L
+1F68:  MOV.B   W0L,9BC
+1F6A:  CALL    77A
+1F6E:  MOV.B   #30,W0L
+1F70:  MOV.B   W0L,9BC
+1F72:  CALL    77A
+1F76:  MOV.B   824,W0L
+1F78:  SE      W0,W0
+1F7A:  MOV     #0,W4
+1F7C:  CALL    EB4
+1F80:  MOV.B   #20,W0L
+1F82:  MOV.B   W0L,9BC
+1F84:  CALL    77A
+1F88:  MOV.B   825,W0L
+1F8A:  SE      W0,W0
+1F8C:  MOV     #8002,W4
+1F8E:  CALL    EB4
+1F92:  MOV.B   #3A,W0L
+1F94:  MOV.B   W0L,9BC
+1F96:  CALL    77A
+1F9A:  MOV.B   826,W0L
+1F9C:  SE      W0,W0
+1F9E:  MOV     #8002,W4
+1FA0:  CALL    EB4
+.................... 			delay_ms(1000); 
+1FA4:  MOV     #3E8,W0
+1FA6:  CALL    4D6
+.................... 		break; 
+1FAA:  BRA     1FC6
+.................... 		default: 
+.................... 			lcd_putc("\fCMD BAD"); 
+1FAC:  MOV     #0,W5
+1FAE:  MOV     W5,W0
+1FB0:  CALL    14A
+1FB4:  IOR.B   #0,W0L
+1FB6:  BTSC.B  42.1
+1FB8:  BRA     1FC4
+1FBA:  INC     W5,W5
+1FBC:  MOV.B   W0L,9BC
+1FBE:  CALL    77A
+1FC2:  BRA     1FAE
+.................... 		break; 
+1FC4:  BRA     1FC6
+....................  
+.................... 	} 
+.................... 	ClosePort(1); 
+1FC6:  MOV     #1,W4
+1FC8:  MOV     W4,9B0
+1FCA:  CALL    FAE
+....................  
+.................... 	//***While loop, main program starts here*** 
+.................... 	while(TRUE) 
+.................... 	{//*****Start of while loop**************        
+.................... 		for(loops=0;loops<=25;loops++) 
+1FCE:  CLR     814
+1FD0:  MOV     814,W4
+1FD2:  CP      W4,#19
+1FD4:  BRA     GT,238E
+.................... 			{//*****Start of for loop************** 
+.................... 				 //**********BUZZER******************** 
+.................... 					output_bit(PIN_D9,alert_status);  //BUZZER depend of alert state 
+1FD6:  CP0     808
+1FD8:  BRA     NZ,1FDE
+1FDA:  BCLR.B  2D7.1
+1FDC:  BRA     1FE0
+1FDE:  BSET.B  2D7.1
+1FE0:  BCLR.B  2D3.1
+....................  
+.................... 				    //**********GPO*********************** 
+....................  
+.................... 					//******Get status/mode*********************** 
+.................... 					lcd_putc("\fGetting data\nfrom server.+."); 
+1FE2:  MOV     #0,W5
+1FE4:  MOV     W5,W0
+1FE6:  CALL    446
+1FEA:  IOR.B   #0,W0L
+1FEC:  BTSC.B  42.1
+1FEE:  BRA     1FFA
+1FF0:  INC     W5,W5
+1FF2:  MOV.B   W0L,9BC
+1FF4:  CALL    77A
+1FF8:  BRA     1FE4
+.................... 					GetMode(Device_Id,&operation_mode,&lamp_statusw); 
+1FFA:  PUSH    812
+1FFC:  POP     996
+1FFE:  MOV     #802,W4
+2000:  MOV     W4,998
+2002:  MOV     #806,W4
+2004:  MOV     W4,99A
+2006:  CALL    FF8
+....................  
+.................... 					if(DateTime[day_]!=RiseTime[day_])  
+200A:  MOV.B   822,W0L
+200C:  CP.B    828
+200E:  BRA     Z,2020
+.................... 						{ 
+.................... 							GetSunriseTime(Device_Id,RiseTime);	 
+2010:  PUSH    812
+2012:  POP     996
+2014:  MOV     #828,W4
+2016:  MOV     W4,998
+2018:  CALL    1200
+.................... 							RiseTime[day_]=DateTime[day_]; 
+201C:  MOV.B   822,W0L
+201E:  MOV.B   W0L,828
+.................... 						} 
+.................... 					if(DateTime[day_]!=SetTime[day_])  
+2020:  MOV.B   822,W0L
+2022:  CP.B    82E
+2024:  BRA     Z,2036
+.................... 						{ 
+.................... 							GetSunsetTime(Device_Id,SetTime); 
+2026:  PUSH    812
+2028:  POP     996
+202A:  MOV     #82E,W4
+202C:  MOV     W4,998
+202E:  CALL    136A
+.................... 							SetTime[day_]=DateTime[day_]; 
+2032:  MOV.B   822,W0L
+2034:  MOV.B   W0L,82E
+.................... 						}					 
+....................  
+.................... 					switch(operation_mode) 
+.................... 						{ 
+2036:  MOV     802,W0
+2038:  XOR     #2,W0
+203A:  BRA     Z,2046
+203C:  XOR     #3,W0
+203E:  BRA     Z,2054
+2040:  XOR     #1,W0
+2042:  BRA     Z,208C
+2044:  BRA     20D8
+.................... 							case Manual_Mode: 
+.................... 								lamp_status=lamp_statusw; 
+2046:  PUSH    806
+2048:  POP     804
+.................... 								lamp1= lamp_status; lamp2=lamp_status; 
+204A:  PUSH    804
+204C:  POP     80C
+204E:  PUSH    804
+2050:  POP     80E
+.................... 							break; 
+2052:  BRA     20DA
+....................  
+.................... 							case Automated_Mode: 
+.................... 								if(DateTime[day_]==RiseTime[day_]&&DateTime[hour_]==RiseTime[hour_]&&DateTime[min_]>=RiseTime[min_]) lamp_status=0; 
+2054:  MOV.B   822,W0L
+2056:  CP.B    828
+2058:  BRA     NZ,206A
+205A:  MOV.B   825,W0L
+205C:  CP.B    82B
+205E:  BRA     NZ,206A
+2060:  MOV.B   82C,W0L
+2062:  MOV     826,W4
+2064:  CP.B    W4L,W0L
+2066:  BRA     NC,206A
+2068:  CLR     804
+.................... 								if(DateTime[day_]==SetTime[day_]&&DateTime[hour_]==SetTime[hour_]&&DateTime[min_]>=SetTime[min_]) lamp_status=1; 
+206A:  MOV.B   822,W0L
+206C:  CP.B    82E
+206E:  BRA     NZ,2082
+2070:  MOV.B   825,W0L
+2072:  CP.B    831
+2074:  BRA     NZ,2082
+2076:  MOV.B   832,W0L
+2078:  MOV     826,W4
+207A:  CP.B    W4L,W0L
+207C:  BRA     NC,2082
+207E:  MOV     #1,W4
+2080:  MOV     W4,804
+.................... 								lamp1= lamp_status; lamp2=lamp_status; 
+2082:  PUSH    804
+2084:  POP     80C
+2086:  PUSH    804
+2088:  POP     80E
+.................... 							break; 
+208A:  BRA     20DA
+....................  
+.................... 							case Zebra_Mode: 
+.................... 								if(DateTime[day_]==RiseTime[day_]&&DateTime[hour_]==RiseTime[hour_]&&DateTime[min_]>=RiseTime[min_]) lamp_status=0; 
+208C:  MOV.B   822,W0L
+208E:  CP.B    828
+2090:  BRA     NZ,20A2
+2092:  MOV.B   825,W0L
+2094:  CP.B    82B
+2096:  BRA     NZ,20A2
+2098:  MOV.B   82C,W0L
+209A:  MOV     826,W4
+209C:  CP.B    W4L,W0L
+209E:  BRA     NC,20A2
+20A0:  CLR     804
+.................... 								if(DateTime[day_]==SetTime[day_]&&DateTime[hour_]==SetTime[hour_]&&DateTime[min_]>=SetTime[min_]) lamp_status=1; 
+20A2:  MOV.B   822,W0L
+20A4:  CP.B    82E
+20A6:  BRA     NZ,20BA
+20A8:  MOV.B   825,W0L
+20AA:  CP.B    831
+20AC:  BRA     NZ,20BA
+20AE:  MOV.B   832,W0L
+20B0:  MOV     826,W4
+20B2:  CP.B    W4L,W0L
+20B4:  BRA     NC,20BA
+20B6:  MOV     #1,W4
+20B8:  MOV     W4,804
+.................... 								if((DateTime[day_]%2)==0) 
+20BA:  MOV.B   822,W0L
+20BC:  AND.B   W0L,#1,W0L
+20BE:  CP0.B   W0L
+20C0:  BRA     NZ,20C8
+.................... 									{  
+.................... 										lamp1= 1*lamp_status; lamp2=0*lamp_status; 
+20C2:  PUSH    804
+20C4:  POP     80C
+20C6:  CLR     80E
+.................... 									} 
+.................... 								if((DateTime[day_]%2)==1) 
+20C8:  MOV.B   822,W0L
+20CA:  AND.B   W0L,#1,W0L
+20CC:  CP.B    W0L,#1
+20CE:  BRA     NZ,20D6
+.................... 									{  
+.................... 										lamp1= 0*lamp_status; lamp2=1*lamp_status; 
+20D0:  CLR     80C
+20D2:  PUSH    804
+20D4:  POP     80E
+.................... 									} 
+.................... 							break; 
+20D6:  BRA     20DA
+.................... 			 
+.................... 							default: 
+.................... 							break; 
+20D8:  BRA     20DA
+.................... 						} 
+.................... 						 
+.................... 					output_bit(PIN_B3,lamp1); 
+20DA:  CP0     80C
+20DC:  BRA     NZ,20E2
+20DE:  BCLR.B  2CA.3
+20E0:  BRA     20E4
+20E2:  BSET.B  2CA.3
+20E4:  MOV     #E3,W4
+20E6:  MOV     W4,2C6
+.................... 					output_bit(PIN_B4,lamp2); 
+20E8:  CP0     80E
+20EA:  BRA     NZ,20F0
+20EC:  BCLR.B  2CA.4
+20EE:  BRA     20F2
+20F0:  BSET.B  2CA.4
+20F2:  MOV     #E3,W4
+20F4:  MOV     W4,2C6
+.................... 					 
+....................         			//**********DAC*********************** 
+....................         			 
+.................... 					//write_ 
+.................... 					//dac(dac_reg); 
+....................  
+.................... 					//******RTC Get and show datetime***** 
+.................... 					lcd_putc("\f"); 
+20F6:  MOV     #0,W5
+20F8:  MOV     W5,W0
+20FA:  CALL    110
+20FE:  IOR.B   #0,W0L
+2100:  BTSC.B  42.1
+2102:  BRA     210E
+2104:  INC     W5,W5
+2106:  MOV.B   W0L,9BC
+2108:  CALL    77A
+210C:  BRA     20F8
+.................... 					lcd_putc("Datetime:\n"); 
+210E:  MOV     #0,W5
+2110:  MOV     W5,W0
+2112:  CALL    42E
+2116:  IOR.B   #0,W0L
+2118:  BTSC.B  42.1
+211A:  BRA     2126
+211C:  INC     W5,W5
+211E:  MOV.B   W0L,9BC
+2120:  CALL    77A
+2124:  BRA     2110
+.................... 					rtc_get_date(DateTime[day_],DateTime[month_],DateTime[year_],dow1); 
+.................... 					rtc_get_time(DateTime[hour_],DateTime[min_],DateTime[sec_]); 
+....................  
+.................... 					printf(lcd_putc,"%d/%d/20%d %02d:%02d",DateTime[day_],DateTime[month_],DateTime[year_],DateTime[hour_],DateTime[min_]); 
+*
+21C0:  MOV.B   822,W0L
+21C2:  SE      W0,W0
+21C4:  MOV     #0,W4
+21C6:  CALL    EB4
+21CA:  MOV.B   #2F,W0L
+21CC:  MOV.B   W0L,9BC
+21CE:  CALL    77A
+21D2:  MOV.B   823,W0L
+21D4:  SE      W0,W0
+21D6:  MOV     #0,W4
+21D8:  CALL    EB4
+21DC:  MOV.B   #2F,W0L
+21DE:  MOV.B   W0L,9BC
+21E0:  CALL    77A
+21E4:  MOV.B   #32,W0L
+21E6:  MOV.B   W0L,9BC
+21E8:  CALL    77A
+21EC:  MOV.B   #30,W0L
+21EE:  MOV.B   W0L,9BC
+21F0:  CALL    77A
+21F4:  MOV.B   824,W0L
+21F6:  SE      W0,W0
+21F8:  MOV     #0,W4
+21FA:  CALL    EB4
+21FE:  MOV.B   #20,W0L
+2200:  MOV.B   W0L,9BC
+2202:  CALL    77A
+2206:  MOV.B   825,W0L
+2208:  SE      W0,W0
+220A:  MOV     #8002,W4
+220C:  CALL    EB4
+2210:  MOV.B   #3A,W0L
+2212:  MOV.B   W0L,9BC
+2214:  CALL    77A
+2218:  MOV.B   826,W0L
+221A:  SE      W0,W0
+221C:  MOV     #8002,W4
+221E:  CALL    EB4
+.................... 					delay_ms(2000); 
+2222:  MOV     #7D0,W0
+2224:  CALL    4D6
+....................  
+.................... 					//******Get and show status/mode******* 
+.................... 					lcd_putc("\f"); 
+2228:  MOV     #0,W5
+222A:  MOV     W5,W0
+222C:  CALL    110
+2230:  IOR.B   #0,W0L
+2232:  BTSC.B  42.1
+2234:  BRA     2240
+2236:  INC     W5,W5
+2238:  MOV.B   W0L,9BC
+223A:  CALL    77A
+223E:  BRA     222A
+.................... 					printf(lcd_putc,"Mode: %d\nStatus: %d",operation_mode,lamp_status); 
+2240:  MOV     #0,W1
+2242:  MOV     W1,W0
+2244:  CALL    470
+2248:  INC     W1,W1
+224A:  MOV     W1,[W15++]
+224C:  MOV.B   W0L,9BC
+224E:  CALL    77A
+2252:  MOV     [--W15],W1
+2254:  MOV     #5,W0
+2256:  CPSGT   W1,W0
+2258:  BRA     2242
+225A:  MOV     802,W0
+225C:  MOV     #0,W4
+225E:  CALL    EB4
+2262:  MOV     #8,W1
+2264:  MOV     W1,W0
+2266:  CALL    470
+226A:  INC     W1,W1
+226C:  MOV     W1,[W15++]
+226E:  MOV.B   W0L,9BC
+2270:  CALL    77A
+2274:  MOV     [--W15],W1
+2276:  MOV     #10,W0
+2278:  CPSGT   W1,W0
+227A:  BRA     2264
+227C:  MOV     804,W0
+227E:  MOV     #0,W4
+2280:  CALL    EB4
+.................... 					delay_ms(2000); 
+2284:  MOV     #7D0,W0
+2286:  CALL    4D6
+....................  
+.................... 					//******Get and show current/voltage*** 
+.................... 					set_adc_channel(0);  //temp sensor 
+228A:  CLR     2A6
+.................... 					current=read_ADC(); 
+228C:  BCLR.B  2A0.0
+228E:  BSET.B  2A0.1
+2290:  BTSS.B  2A0.0
+2292:  BRA     2290
+2294:  MOV     280,W0
+2296:  CALL    1500
+229A:  MOV     W0,816
+229C:  MOV     W1,818
+.................... 					set_adc_channel(1); 
+229E:  MOV     #1,W4
+22A0:  MOV     W4,2A6
+.................... 					voltage=read_ADC(); 
+22A2:  BCLR.B  2A0.0
+22A4:  BSET.B  2A0.1
+22A6:  BTSS.B  2A0.0
+22A8:  BRA     22A6
+22AA:  MOV     280,W0
+22AC:  CALL    1500
+22B0:  MOV     W0,81A
+22B2:  MOV     W1,81C
+.................... 					set_adc_channel(2); 
+22B4:  MOV     #2,W4
+22B6:  MOV     W4,2A6
+.................... 					battery=read_ADC(); 
+22B8:  BCLR.B  2A0.0
+22BA:  BSET.B  2A0.1
+22BC:  BTSS.B  2A0.0
+22BE:  BRA     22BC
+22C0:  MOV     280,W0
+22C2:  CALL    1500
+22C6:  MOV     W0,81E
+22C8:  MOV     W1,820
+....................  
+.................... 					lcd_putc("\f"); 
+22CA:  MOV     #0,W5
+22CC:  MOV     W5,W0
+22CE:  CALL    110
+22D2:  IOR.B   #0,W0L
+22D4:  BTSC.B  42.1
+22D6:  BRA     22E2
+22D8:  INC     W5,W5
+22DA:  MOV.B   W0L,9BC
+22DC:  CALL    77A
+22E0:  BRA     22CC
+.................... 					printf(lcd_putc,"Current: %6.3f\nVoltage: %6.3f",current,voltage); 
+22E2:  MOV     #0,W1
+22E4:  MOV     W1,W0
+22E6:  CALL    490
+22EA:  INC     W1,W1
+22EC:  MOV     W1,[W15++]
+22EE:  MOV.B   W0L,9BC
+22F0:  CALL    77A
+22F4:  MOV     [--W15],W1
+22F6:  MOV     #8,W0
+22F8:  CPSGT   W1,W0
+22FA:  BRA     22E4
+22FC:  MOV     818,W2
+22FE:  MOV     816,W1
+2300:  MOV     #0,W0
+2302:  CALL    153A
+2306:  MOV     #3,W9
+2308:  MOV     #5,W10
+230A:  CALL    1778
+230E:  MOV     #E,W1
+2310:  MOV     W1,W0
+2312:  CALL    490
+2316:  INC     W1,W1
+2318:  MOV     W1,[W15++]
+231A:  MOV.B   W0L,9BC
+231C:  CALL    77A
+2320:  MOV     [--W15],W1
+2322:  MOV     #17,W0
+2324:  CPSGT   W1,W0
+2326:  BRA     2310
+2328:  MOV     81C,W2
+232A:  MOV     81A,W1
+232C:  MOV     #0,W0
+232E:  CALL    153A
+2332:  MOV     #3,W9
+2334:  MOV     #5,W10
+2336:  CALL    1778
+.................... 					//ReportData(Device_Id,lamp_status,current,voltage); 
+.................... 					delay_ms(2000); 
+233A:  MOV     #7D0,W0
+233C:  CALL    4D6
+.................... 					lcd_putc("\f"); 
+2340:  MOV     #0,W5
+2342:  MOV     W5,W0
+2344:  CALL    110
+2348:  IOR.B   #0,W0L
+234A:  BTSC.B  42.1
+234C:  BRA     2358
+234E:  INC     W5,W5
+2350:  MOV.B   W0L,9BC
+2352:  CALL    77A
+2356:  BRA     2342
+.................... 					printf(lcd_putc,"Battery= %6.3f",battery); 
+2358:  MOV     #0,W1
+235A:  MOV     W1,W0
+235C:  CALL    4BA
+2360:  INC     W1,W1
+2362:  MOV     W1,[W15++]
+2364:  MOV.B   W0L,9BC
+2366:  CALL    77A
+236A:  MOV     [--W15],W1
+236C:  MOV     #8,W0
+236E:  CPSGT   W1,W0
+2370:  BRA     235A
+2372:  MOV     820,W2
+2374:  MOV     81E,W1
+2376:  MOV     #0,W0
+2378:  CALL    153A
+237C:  MOV     #3,W9
+237E:  MOV     #5,W10
+2380:  CALL    1778
+.................... 					delay_ms(2000); 
+2384:  MOV     #7D0,W0
+2386:  CALL    4D6
+....................  
+.................... 			}//*****End of for loop************** 
+238A:  INC     0814
+238C:  BRA     1FD0
+.................... 			ReportData(Device_Id,lamp_status,current,voltage); 
+238E:  PUSH    812
+2390:  POP     996
+2392:  PUSH    804
+2394:  POP     998
+2396:  PUSH    816
+2398:  POP     99A
+239A:  PUSH    818
+239C:  POP     99C
+239E:  PUSH    81A
+23A0:  POP     99E
+23A2:  PUSH    81C
+23A4:  POP     9A0
+23A6:  CALL    1A7C
+.................... 	}//*****End of while loop************** 
+23AA:  BRA     1FCE
+.................... } 
+23AC:  PWRSAV  #0
+
+Configuration Fuses:
+   Word  1L: C701   NOCKSFSM FRC_PLL4 PR_PLL
+          H: 0000  
+   Word  2L: 003F   NOWDT WPSB16 WPSA512
+          H: 0000  
+   Word  3L: 0733   PUT64 NOBROWNOUT BORRES LPOL_HIGH HPOL_HIGH NOPWMPIN NOMCLR
+          H: 0000  
+   Word  4L: 310F  
+          H: 0000  
+   Word  5L: 330F  
+          H: 0000  
+   Word  6L: 0007   NOPROTECT NOWRT
+          H: 0000  
+   Word  7L: C003   NODEBUG NOCOE ICSP1
+          H: 0000  

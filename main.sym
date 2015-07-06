@@ -1,0 +1,236 @@
+W0      @SCRATCH
+W0L     _RETURN_
+W0 -W3  @F64TOI64.P1
+W0 -W1  @READ_PROGRAM_MEMORY.P2
+W0 -W3  @DIV6464B.P3
+W0 -W2  @F48TO64.P4
+W0 -W1  @DIV3232B.P5
+W0      @delay_ms1.P6
+W0      @ITOF.P7
+W0      @delay_us1.P8
+W0 -W1  @ADDFF.P9
+W0      @PRINTFD16_115200_5891_5890.P10
+W0 -W3  @MULFF64.P11
+W0 -W1  @MULFF.P12
+W0 -W3  @PRINTF_F64_115200_5891_5890.P13
+W0 -W3  @PRINTF_F64_186.P14
+W0 -W1  @MULS3232.P15
+W0      @PRINTFD16_186.P16
+W0 -W1  @SDTOF.P17
+W1      @SCRATCH
+W1      @READ_PACKED_MEMORY.P1
+W1      @WRITE_PACKED_MEMORY.P2
+W2      @READ_PACKED_MEMORY.P1
+W2 -W3  @ADDFF.P2
+W2 -W3  @MULS3232.P3
+W2 -W3  @DIV3232B.P4
+W2 -W3  @MULFF.P5
+W2      @WRITE_PACKED_MEMORY.P6
+W2      @READ_PROGRAM_MEMORY.P7
+W3      @WRITE_PACKED_MEMORY.P1
+W3      @READ_PACKED_MEMORY.P2
+W3      @READ_PROGRAM_MEMORY.P3
+W4 -W7  @MULFF64.P1
+W4      @PRINTFD16_186.P2
+W4 -W7  @DIV6464B.P3
+W4      @PRINTFD16_115200_5891_5890.P4
+W9 -W10 @PRINTF_F64_115200_5891_5890.P1
+W9 -W10 @PRINTF_F64_186.P2
+20E     OERR
+800-801 rs232_errors
+802-803 operation_mode
+804-805 lamp_status
+806-807 lamp_statusw
+808-809 alert_status
+80A-80B alert_type
+80C-80D lamp1
+80E-80F lamp2
+810-811 i
+812-813 Device_Id
+814-815 loops
+816-819 current
+81A-81D voltage
+81E-821 battery
+822-827 DateTime
+828-82D RiseTime
+82E-833 SetTime
+834     dow1
+836-993 InputBuffer
+994-995 ptime
+996-997 GetMode.Id
+996-997 GetSunsetTime.Id
+996     lcd_init.i
+996     rtc_set_datetime.day
+996-997 GetSunriseTime.Id
+996-997 ReportData.Id
+996-997 ConfigureDatetime.Id
+996-997 ConfigureGPRS.status
+996     rtc_init.x
+997     rtc_set_datetime.mth
+998-999 GetSunsetTime.DateTime
+998-999 GetSunriseTime.DateTime
+998     rtc_set_datetime.year
+998-999 GetMode.mod
+998-999 ConfigureGPRS.count
+998-999 ReportData.state
+998-999 ConfigureDatetime.DateTime
+999     rtc_set_datetime.dow
+99A-99B ConfigureDatetime.status
+99A-99B GetSunriseTime.index
+99A-99B GetMode.state
+99A     rtc_set_datetime.hr
+99A-99D ReportData.curr
+99A     read_ds1302.cmd
+99A-99B GetSunsetTime.index
+99B     read_ds1302.i
+99B     rtc_set_datetime.min
+99C     read_ds1302.data
+99C-99D ConfigureDatetime.index
+99C     rm_bcd.data
+99C-99D GetMode.status
+99D     rm_bcd.i
+99E-9A1 ReportData.volt
+99E-99F GetMode.index
+9A2     get_bcd.data
+9A2-9A3 ReportData.index
+9A3     get_bcd.nibh
+9A4     get_bcd.nibl
+9A4     write_ds1302.cmd
+9A5     write_ds1302.data
+9A8     write_ds1302_byte.cmd
+9A9     write_ds1302_byte.i
+9AA-9AB GetDecVal.arrayval
+9AC-9AD GetDecVal.Size
+9AE     GetDecVal.stch1
+9AF     GetDecVal.stch2
+9B0-9B1 ClosePort.socket
+9B0-9B1 GetDecVal.ind
+9B0-9B1 ValidateCommand.CMDStr
+9B0-9B1 PrintBuffer.buffer
+9B2-9B3 ValidateCommand.Size
+9B2-9B3 GetDecVal.value
+9B2-9B3 PrintBuffer.permanency
+9B4-9B5 ReadBuffer.buffer
+9B4-9B5 ValidateCommand.index
+9B4-9B5 FillArray.arrayval
+9B6-9B7 ReadBuffer.index
+9B6-9B7 ValidateCommand.result
+9B6-9B7 FillArray.Size
+9B8     FillArray.val
+9BA-9BB FillArray.index
+9BC     lcd_putc.c
+9BE     lcd_gotoxy.x
+9BF     lcd_gotoxy.y
+9C0     lcd_gotoxy.address
+9C4     lcd_send_byte.address
+9C5     lcd_send_byte.n
+9C8     lcd_read_byte.low
+9C9     lcd_read_byte.high
+9CA     lcd_read_nibble.n
+9CA     lcd_send_nibble.n
+F80-FFF Stack
+
+ROM Allocation:
+04D6  @delay_ms1
+07E6  @GETCH_BIU_1
+0684  write_ds1302_byte
+06AA  write_ds1302
+06C4  read_ds1302
+070C  rtc_init
+0DF2  get_bcd
+14DA  rm_bcd
+0E16  rtc_set_datetime
+2126  rtc_get_date
+217E  rtc_get_time
+1500  @ITOF
+0100  LCD_INIT_STRING
+0564  lcd_read_byte
+052A  lcd_read_nibble
+04E6  lcd_send_nibble
+05B4  lcd_send_byte
+0608  lcd_init
+0750  lcd_gotoxy
+077A  lcd_putc
+07C6  FillArray
+07F4  ReadBuffer
+0846  PrintBuffer
+0110  @const214
+0880  ValidateCommand
+0C06  GetDecVal
+08BA  ConfigureGPRS
+011E  @const231
+0136  @const232
+014A  @const233
+0160  @const234
+01A4  @const237
+01BC  @const240
+0B0C  @PRINTFD16_115200_5891_5890
+0FAE  ClosePort
+01FA  @const257
+0C7C  ConfigureDatetime
+0214  @const263
+0260  @const264
+1200  GetSunriseTime
+0272  @const272
+136A  GetSunsetTime
+02C0  @const282
+0FF8  GetMode
+030C  @const294
+0358  @const295
+1A7C  ReportData
+03A6  @const311
+153A  @F48TO64
+1580  @MULFF64
+168E  @F64TOI64
+16E4  @DIV6464B
+18FA  @PRINTF_F64_115200_5891_5890
+1CC0  MAIN
+0410  @const340
+042E  @const343
+0EB4  @PRINTFD16_186
+0446  @const349
+0470  @const354
+0490  @const356
+1778  @PRINTF_F64_186
+04BA  @const361
+1CC0  @cinit
+
+
+User Memory space: 
+
+User Memory space: 
+
+Project Directory:
+    C:\Users\e882742\Documents\TELEGESTION\MICROCHIP\
+
+Project Files:
+    main.c
+    Config.h
+    ..\..\..\..\..\Program Files (x86)\PICC\devices\30f5015.h
+    DS1302_2.c
+    SerialCommWiFly.c
+    mcp4921_DSPIC.c
+    lcd_2.c
+    ADH8066.c
+
+Units:
+    C:\Users\e882742\Documents\TELEGESTION\MICROCHIP\main (main)
+
+Compiler Settings:
+    Processor:      DSPIC30F5015
+    Pointer Size:   16
+    ADC Range:      0-1023
+    Opt Level:      0
+    Short,Int,Long: SIGNED: 8,16,32
+    Float,Double:   32,64
+
+Output Files:
+    Errors:      main.err
+    Ext Symbols: main.esym
+    INHX8:       main.hex
+    Symbols:     main.sym
+    List:        main.lst
+    Debug/COFF:  main.cof
+    Project:     main.PJT
+    Call Tree:   main.tre
+    Statistics:  main.sta
