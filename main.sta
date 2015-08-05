@@ -1,110 +1,109 @@
 
-ROM used: 9134 (20%)
-          9134 (20%) including unused fragments
+ROM used: 9326 (21%)
+          9326 (21%) including unused fragments
 
           5 Average locations per line
-          16 Average locations per statement
+          18 Average locations per statement
 
-RAM used: 536 (26%) at main() level
-          586 (29%) worst case
+RAM used: 550 (27%) at main() level
+          590 (29%) worst case
 
 Stack used: 7 worst case (out of 31 total available)
 
 Lines Stmts  %   Files
 ----- ----- ---  -----
-  166    86  15  main.c
-   28     0   0  Config.h
+  131    91  17  main.c
+   50     0   0  Config.h
   443     0   0  ..\..\..\..\..\Program Files (x86)\PICC\devices\30f5015.h
-  143    53   9  DS1302_2.c
-  101    40   7  SerialCommWiFly.c
+  143    53  10  DS1302_2.c
    68    22   4  mcp4921_DSPIC.c
-  357    83  15  lcd_2.c
-  575   284  50  ADH8066.c
+  357    83  16  lcd_2.c
+  542   280  53  ADH8066.c
 ----- -----
- 1881   568 Total
+ 1734   529 Total
 
 Page ROM  %  RAM   Vol Diff  Functions:
 ---- --- --- ---   --- ----  ----------
 0     16   0   2             @delay_ms1
-0     14   0   0             @GETCH_BIU_1
-0     38   0   2   211  4.5  write_ds1302_byte
+0     36   0   2   211  4.5  write_ds1302_byte
 0     26   0   2   104  2.0  write_ds1302
-0     72   0   3   414  5.0  read_ds1302
+0     68   0   3   414  5.0  read_ds1302
 0     68   0   3   254  3.7  rtc_init
-0     36   0   5   176  5.6  get_bcd
-0     38   0   4   171  4.5  rm_bcd
-0    158   1   8   437  2.4  rtc_set_datetime
+0     40   0   5   176  5.6  get_bcd
+0     36   0   4   171  4.5  rm_bcd
+0    172   1   8   437  2.4  rtc_set_datetime
  Inline        6   260  3.5  rtc_get_date
  Inline        5   186  3.3  rtc_get_time
-0     58   0   2             @ITOF
-0     16   0   0             @const168
+0     16   0   0             @const112
 0     80   0   4   760  4.5  lcd_read_byte
-0     58   0   3   262  3.7  lcd_read_nibble
+0     56   0   3   262  3.7  lcd_read_nibble
 0     68   0   1   399  2.4  lcd_send_nibble
-0     84   0   4   325  3.5  lcd_send_byte
-0    124   1   3   668  4.9  lcd_init
-0     42   0   5   203  6.0  lcd_gotoxy
+0     78   0   4   325  3.5  lcd_send_byte
+0    130   1   3   668  4.9  lcd_init
+0     46   0   5   203  6.0  lcd_gotoxy
 0     76   0   1   272  4.1  lcd_putc
 0     32   0  10   176  5.0  FillArray
-0     82   0   9   390  6.5  ReadBuffer
+0     78   0   7   390  6.5  ReadBuffer
 0     58   0   7   102  2.1  PrintBuffer
-0     14   0   0             @const214
+0     14   0   0             @const158
 0     58   0  10   307  6.7  ValidateCommand
 0    118   1  12   655  9.9  GetDecVal
 0    594   3   7  1786  5.8  ConfigureGPRS
-0     24   0   0             @const231
-0     20   0   0             @const232
-0     22   0   0             @const233
-0     68   0   0             @const234
-0     24   0   0             @const237
-0     62   0   0             @const240
+0     24   0   0             @const175
+0     20   0   0             @const176
+0     22   0   0             @const177
+0     68   0   0             @const178
+0     24   0   0             @const181
+0     62   0   0             @const184
 0    250   1   0             @PRINTFD16_115200_5891_5890
 0     74   0   2    92  1.6  ClosePort
-0     26   0   0             @const257
-0    374   2  13  1288 10.0  ConfigureDatetime
-0     76   0   0             @const263
-0     18   0   0             @const264
-0    362   2  11  1106  8.5  GetSunriseTime
-0     78   0   0             @const272
-0    368   2  11  1138  8.5  GetSunsetTime
-0     76   0   0             @const282
-0    520   3  15  1774  8.2  GetMode
-0     76   0   0             @const294
-0     78   0   0             @const295
-0    580   3  19  1208  8.0  ReportData
-0    106   1   0             @const311
+0     26   0   0             @const201
+0    372   2  13  1288 10.0  ConfigureDatetime
+0     76   0   0             @const207
+0     18   0   0             @const208
+0    516   3  13  1774  8.2  GetMode
+0     76   0   0             @const238
+0     78   0   0             @const239
+0    422   2  17   940  6.5  ReportData
+0    106   1   0             @const251
 0     70   0   0             @F48TO64
 0    270   1   0             @MULFF64
 0     86   0   0             @F64TOI64
 0    148   1   0             @DIV6464B
 0    386   2   0             @PRINTF_F64_115200_5891_5890
-0   1774  10   3  4888 11.9  MAIN
-0     30   0   0             @const340
-0     24   0   0             @const343
-0    250   1   0             @PRINTFD16_186
-0     42   0   0             @const349
-0     32   0   0             @const354
-0     42   0   0             @const356
-0    386   2   0             @PRINTF_F64_186
-0     28   0   0             @const361
+0   2140  11   9  4888 11.8  MAIN
+0     30   0   0             @const301
+0     24   0   0             @const304
+0    250   1   0             @PRINTFD16_130
+0     42   0   0             @const310
+0     32   0   0             @const315
+0     58   0   2             @ITOF
+0    416   2   8             @ADDFF
+0    202   1   8             @DIVFF
+0    190   1   8             @MULFF
+0     28   0   0             @const328
+0    386   2   0             @PRINTF_F64_130
+0     48   0   0             @const333
+0     30   0   0             @const335
+0     36   0   0             @const337
 
 Program metrics:
-    Functions               29
-    Statements              568
-    Comments                472
-    Volume (V)              33446
-    Difficilty (D)          152.9
-    Effort to implement (E) 5115312
-    Time to implement (T)   78 hours, 56 minutes
-    Est Delivered Bugs (B)  10
-    Cyclomatic Complexity   51
-    Maintainability (MI)    84
+    Functions               27
+    Statements              529
+    Comments                421
+    Volume (V)              28912
+    Difficilty (D)          134.1
+    Effort to implement (E) 3878197
+    Time to implement (T)   59 hours, 51 minutes
+    Est Delivered Bugs (B)  8
+    Cyclomatic Complexity   39
+    Maintainability (MI)    78
 
  Segment     Used  Free
 -----------  ----  ----
 00000-00002     4  0  
 00004-000FE   252  0  
-00100-0AFFE  8878  35922  
+00100-0AFFE  9070  35730  
 
 
 

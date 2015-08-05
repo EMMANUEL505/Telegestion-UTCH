@@ -7,7 +7,6 @@
 /******************Variable and constant definitions*****/
 const char hexcode[17]="0123456789abcdef";
 
-
 char InputBuffer[350]={0};
 int16 ptime=100;
 
@@ -219,8 +218,6 @@ int OpenPort(int socket, int lport,char dname[100], int rport)
 	printf("AT+AIPO=%d,%d,\"%s\",%d,0,,1,2\r\n",socket,lport,dname,rport);  //Conect to server
 	//******Get incoming buffer data******
 	ReadBuffer(InputBuffer);
-	//***Print input buffer in LCD********
-	//PrintBuffer(InputBuffer,2000);
 	//***Validate ok command**************
 	state=ValidateCommand(InputBuffer,30);
 	if(state==1) lcd_putc("\fCMD OK");
@@ -259,10 +256,8 @@ int ConfigureDatetime(int Id, byte* DateTime)
 {
 	int status=0;
 	int16 index=0;
-
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
 	printf("GET /TIMEGPRS/NOWTIME/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
-
     do
     {
         InputBuffer[index]=getc();	
@@ -272,8 +267,6 @@ int ConfigureDatetime(int Id, byte* DateTime)
 	delay_ms(50);
 	printf("+++\r\n");
 	OERR=16;
-	//PrintBuffer(InputBuffer,ptime);
-
 	if(ValidateCommand(InputBuffer,index)==1) 
 		{
 			lcd_putc("\fCMD OK");
@@ -293,8 +286,8 @@ int ConfigureDatetime(int Id, byte* DateTime)
 			status=0;
 		}
 	return status;
-
 }
+
 /***********GetSunriseTime********************************
 **   Description: Connects to server to obtain the      **
 **     current sunrise time of the specified device     **
@@ -308,17 +301,11 @@ void GetSunriseTime(int Id, byte* DateTime)
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
 	printf("AT+AIPA=1\r\n");        //Conect to internet
 	ReadBuffer(InputBuffer);
-	//PrintBuffer(InputBuffer,ptime);
-	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK");
-	//else lcd_putc("\fCMD BAD");
 	delay_ms(ptime);
 
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
 	printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server
 	ReadBuffer(InputBuffer);
-	//PrintBuffer(InputBuffer,ptime);
-	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK");
-	//else lcd_putc("\fCMD BAD");
 	delay_ms(ptime);
 
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
@@ -332,9 +319,6 @@ void GetSunriseTime(int Id, byte* DateTime)
 
 	if(ValidateCommand(InputBuffer,index)==1) 
 		{
-			//lcd_putc("\fCMD OK");
-			//delay_ms(ptime);
-
 			*(DateTime+3)=(int)GetDecVal(InputBuffer,index,'h','r');
 			*(DateTime+4)=(int)GetDecVal(InputBuffer,index,'m','n');
 		}
@@ -346,11 +330,9 @@ void GetSunriseTime(int Id, byte* DateTime)
 	printf("+");
 	OERR=16;
 	ReadBuffer(InputBuffer);
-	//PrintBuffer(InputBuffer,ptime);
-
 	ClosePort(1);
-
 }
+
 /***********GetSunsetTime********************************
 **   Description: Connects to server to obtain the      **
 **     current sunset time of the specified device      **
@@ -364,22 +346,15 @@ void GetSunsetTime(int Id, byte* DateTime)
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
 	printf("AT+AIPA=1\r\n");        //Conect to internet
 	ReadBuffer(InputBuffer);
-	//PrintBuffer(InputBuffer,ptime);
-	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK");
-	//else lcd_putc("\fCMD BAD");
 	delay_ms(ptime);
 
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
 	printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server
 	ReadBuffer(InputBuffer);
-	//PrintBuffer(InputBuffer,ptime);
-	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK");
-	//else lcd_putc("\fCMD BAD");
 	delay_ms(ptime);
 
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
 	printf("GET /TIMEGPRS/GETSUNSET/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
-
     do
     {
         InputBuffer[index]=getc();	
@@ -388,9 +363,6 @@ void GetSunsetTime(int Id, byte* DateTime)
 
 	if(ValidateCommand(InputBuffer,index)==1) 
 		{
-			//lcd_putc("\fCMD OK");
-			//delay_ms(ptime);
-
 			*(DateTime+3)=(int)GetDecVal(InputBuffer,index,'h','r');
 			*(DateTime+4)=(int)GetDecVal(InputBuffer,index,'m','n');
 		}
@@ -402,7 +374,6 @@ void GetSunsetTime(int Id, byte* DateTime)
 	printf("+");
 	OERR=16;
 	ReadBuffer(InputBuffer);
-	//PrintBuffer(InputBuffer,ptime);
 	delay_ms(50);
 	ClosePort(1);
 }
@@ -493,22 +464,17 @@ void ReportData(int Id, int state,float curr,float volt)
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
 	printf("AT+AIPA=1\r\n");        //Conect to internet
 	ReadBuffer(InputBuffer);
-	PrintBuffer(InputBuffer,ptime);
-	if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK");
-	else lcd_putc("\fCMD BAD");
 	delay_ms(ptime);
 
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
 	printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server
 	ReadBuffer(InputBuffer);
-	PrintBuffer(InputBuffer,ptime);
-	if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK");
-	else lcd_putc("\fCMD BAD");
 	delay_ms(ptime);
 
 	//**************GET REQUEST TO OBTAIN MODE****************
 	FillArray(InputBuffer,350,0);  //Clear input_buffer /monitoringgprs/create?id=14&status=0&current=1&voltage=2
-	printf("GET /MONITORINGGPRS/CREATE?ID=%d&STATUS=%d&CURRENT=%3.2f&VOLTAGE=%3.2f HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id,state,curr,volt);
+	printf("GET /MONITORINGGPRS/CREATE?ID=%d&STATUS=%d&CURRENT=%6.3f&VOLTAGE=%6.3f HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id,state,curr,volt);
+		//printf("GET /MONITORINGGPRS/CREATE?ID=9&STATUS=1&CURRENT=6&VOLTAGE=6 HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n");
 	while(getc()!='\n');
 	do
 	{
@@ -518,13 +484,14 @@ void ReportData(int Id, int state,float curr,float volt)
 
 	//***Close data connection************
 	delay_ms(50);
-	printf("+++\r\n");
+	printf("+");
+	printf("+");
+	printf("+");
 	OERR=16;
-	//PrintBuffer(InputBuffer,ptime);
-
-	PrintBuffer(InputBuffer,1000);
-
+	ReadBuffer(InputBuffer);
+	delay_ms(50);
 	ClosePort(1);
+	delay_ms(5000);
 }
 
 /***********CreateAlert***********************************

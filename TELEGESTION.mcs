@@ -5,7 +5,7 @@ Version=1.0
 Location=main.ESYM
 Folder=Intermediary
 [File001]
-Location=C:\Users\e882742\Documents\TELEGESTION\MICROCHIP\main.o
+Location=C:\Users\e882742\Documents\TELEGESTION\dsPIC software\main.o
 Folder=Intermediary
 [File002]
 Location=main.HEX
