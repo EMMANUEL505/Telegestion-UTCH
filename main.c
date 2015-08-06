@@ -10,10 +10,10 @@ void main(void)
 	//***Device initialize*********
 	lcd_putc("\fTelegestion UTCH");
 	delay_ms(100);
-	setup_adc_ports(sAN0|sAN1|sAN2|sAN3|sAN4|sAN5|sAN6);//*******Setup ch0, ch1 and ch2 as ADC inputs in Px, Py and Pz******
+	setup_adc_ports(sAN0|sAN1|sAN2|sAN3|sAN4|sAN5|sAN6);//*******Setup CH0-CH6 as ADC
 	setup_adc(ADC_CLOCK_INTERNAL);
 	//******Configure PORTB***********
-	SET_TRIS_B(0x007F);   //PB0, PB1, PB2 as input, PB3-PB15 as output (0b0000000000000111)
+	SET_TRIS_B(0x007F);   //PB0-PB6 as input, PB7-PB15 as output
 	//******Clear RS232 error**********
 	OERR=16;
 	//******Configure GPRS device******
@@ -36,95 +36,84 @@ void main(void)
 		break;
 
 	}
-	ClosePort(1);
+	//ClosePort(1);
 	//***While loop, main program starts here***
 	while(TRUE)
 	{//*****Start of while loop**************       
 		for(loops=0;loops<4;loops++)
-			{//*****Start of for loop**************
-				 //**********BUZZER********************
-					output_bit(PIN_D9,alert_status);  //BUZZER depend of alert state
+		{//*****Start of for loop**************
+			//**********BUZZER********************
+			output_bit(PIN_D9,alert_status);  //BUZZER depend of alert state
+			//**********GPO***********************
+			//******Get status/mode***********************
+			lcd_putc("\fGetting data\nfrom server.+.");
+			GetMode(Device_Id,&operation_mode,&lamp_statusw);	
+			delay_ms(1500);		
+			switch(operation_mode)
+			{
+				case Timmer_Mode:
+					GetOnTime(Device_Id,OnTime);
+					GetOffTime(Device_Id,OffTime);
+					if(DateTime[hour_]==OnTime[hour_]&&((DateTime[min_]>=OnTime[min_])&&(DateTime[min_]<=(OnTime[min_]+1)))) lamp_status=1;
+					if(DateTime[hour_]==OffTime[hour_]&&((DateTime[min_]>=OffTime[min_])&&(DateTime[min_]<=(OffTime[min_]+1)))) lamp_status=0;
+					lamp1= lamp_status; lamp2=lamp_status;
+				break;	
+				case Automated_Mode:
+					//if(S1>set_point+histeresys) lamp_status=0;
+					//if(S1<set_point-histeresys) lamp_status=1;
+				break;	
+				case Manual_Mode:
+					lamp_status=lamp_statusw;
+					lamp1= lamp_status; lamp2=lamp_status;
+				break;	
+				default:
+				break;
+			}						
+			output_bit(PIN_B7,lamp1);	output_bit(PIN_B8,lamp2);					
+			//******RTC Get and show datetime*****
+			lcd_putc("\f");
+			lcd_putc("Datetime:\n");
+			rtc_get_date(DateTime[day_],DateTime[month_],DateTime[year_],dow1);
+			rtc_get_time(DateTime[hour_],DateTime[min_],DateTime[sec_]);
+			printf(lcd_putc,"%d/%d/20%d %02d:%02d",DateTime[day_],DateTime[month_],DateTime[year_],DateTime[hour_],DateTime[min_]);
+			delay_ms(2000);
 
-				    //**********GPO***********************
+			//******Get and show status/mode*******
+			lcd_putc("\f");
+			printf(lcd_putc,"Mode: %d\nStatus: %d",operation_mode,lamp_status);
+			delay_ms(2000);
 
-					//******Get status/mode***********************
-					lcd_putc("\fGetting data\nfrom server.+.");
-					GetMode(Device_Id,&operation_mode,&lamp_statusw);	
-					delay_ms(1500);		
+			//******Get and show ADC values***
+			temp=ReadADC(TEMP_ch,100,10);
+			current=ReadADC(CURRENT_ch,100,10);
+			s1=ReadADC(SENSOR1_ch,100,10);
+			s2=ReadADC(SENSOR2_ch,100,10);
+			reference=ReadADC(REFERENCE_ch,100,10);
+			battery=ReadADC(POWER_ch,100,10);
 
-					switch(operation_mode)
-						{
-							case Manual_Mode:
-								lamp_status=lamp_statusw;
-								lamp1= lamp_status; lamp2=lamp_status;
-							break;
+			reference=0.412/reference;
+			temp=(temp*reference)*1000;
+			current=(current*reference)*1000;
+			battery=(battery*reference)*3.11;	
+			s1=s1*reference/.165; 	//165 Ohms resitor in serie with sensor, (v/165)*1000 (in mA)
+			s2=s2*reference/.165;	//165 Ohms resitor in serie with sensor, (v/165)*1000 (in mA)
 
-							case Automated_Mode:
-								if(DateTime[day_]==RiseTime[day_]&&DateTime[hour_]==RiseTime[hour_]&&DateTime[min_]>=RiseTime[min_]) lamp_status=0;
-								if(DateTime[day_]==SetTime[day_]&&DateTime[hour_]==SetTime[hour_]&&DateTime[min_]>=SetTime[min_]) lamp_status=1;
-								lamp1= lamp_status; lamp2=lamp_status;
-							break;		
-							default:
-							break;
-						}						
-					output_bit(PIN_B7,lamp1);
-					output_bit(PIN_B8,lamp2);					
-					//******RTC Get and show datetime*****
-					lcd_putc("\f");
-					lcd_putc("Datetime:\n");
-					rtc_get_date(DateTime[day_],DateTime[month_],DateTime[year_],dow1);
-					rtc_get_time(DateTime[hour_],DateTime[min_],DateTime[sec_]);
-					printf(lcd_putc,"%d/%d/20%d %02d:%02d",DateTime[day_],DateTime[month_],DateTime[year_],DateTime[hour_],DateTime[min_]);
-					delay_ms(2000);
+			lcd_putc("\f");
+			printf(lcd_putc,"Battery= %6.3fv",battery);
+			delay_ms(LCD_Delay);
+			lcd_putc("\f");
+			printf(lcd_putc,"Current: %6.3fmV\nTemperature: %6.3fmV",current,temp);//1.1,1.1);//current,temp);
+			delay_ms(LCD_Delay);
+			lcd_putc("\f");
+			printf(lcd_putc,"Reference= %6.3f",reference);
+			delay_ms(LCD_Delay);
+			lcd_putc("\f");
+			printf(lcd_putc,"S1: %6.3fmA\nS2: %6.3fmA",s1,s2);
+			delay_ms(LCD_Delay);
 
-					//******Get and show status/mode*******
-					lcd_putc("\f");
-					printf(lcd_putc,"Mode: %d\nStatus: %d",operation_mode,lamp_status);
-					delay_ms(2000);
-
-					//******Get and show current/voltage***
-					set_adc_channel(0);  //temp sensor
-					temp=read_ADC();
-					delay_us(100);
-					set_adc_channel(1);
-					current=read_ADC();
-					delay_us(100);
-					set_adc_channel(5);
-					battery=read_ADC();
-					delay_us(100);
-					set_adc_channel(3);
-					s1=read_ADC();
-					delay_us(100);
-					set_adc_channel(4);
-					s2=read_ADC();
-					delay_us(100);
-					
-					for(i_=0;i_<10;i_++)
-					{
-						set_adc_channel(6);
-						reference=reference+read_ADC();
-						delay_us(50);
-					}
-					reference=4.12/reference;
-					temp=(temp*reference);
-					battery=(battery*reference)*3.11;
-					s1=s1*reference/.165;
-					s2=s2*reference/.165;
-
-					lcd_putc("\f");
-					printf(lcd_putc,"Battery= %6.3fv",battery);
-					delay_ms(2000);
-					lcd_putc("\f");
-					printf(lcd_putc,"Current: %6.3fA\nTemperature: %6.3f",current,temp);//1.1,1.1);//current,temp);
-					//ReportData(Device_Id,lamp_status,current,voltage);
-					delay_ms(2000);
-					lcd_putc("\f");
-					printf(lcd_putc,"Reference= %6.3f",reference);
-					delay_ms(2000);
-					lcd_putc("\f");
-					printf(lcd_putc,"S1: %6.3fmA\nS2: %6.3fmA",s1,s2);
-					delay_ms(10000);
-			}//*****End of for loop**************
-			ReportData(Device_Id,lamp_status,(current+100),(temp+100));//1,1.1,1.1);
+			if(battery<6.3) alert_status=1;
+			else alert_status=0;
+		}//*****End of for loop**************
+		ReportData(Device_Id,lamp_status,(current+100),(battery+100));//1,1.1,1.1);
 	}//*****End of while loop**************
 }

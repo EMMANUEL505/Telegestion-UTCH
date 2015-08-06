@@ -1,8 +1,74 @@
+///////////////////////////////////////////////////////////////////////////////
+////                             ADH8066.C                                 ////
+////                 Driver for ADH8066 GPRS modules                       ////
+////                                                                       ////
+////  StringToHex(Str,size,result)                                         ////
+////                                                                       ////
+////  lcd_putc(c)  Will display c on the next position of the LCD.         ////
+////                     The following have special meaning:               ////
+////                      \f  Clear display                                ////
+////                      \n  Go to start of second line                   ////
+////                      \b  Move back one position                       ////
+////                                                                       ////
+////  lcd_gotoxy(x,y) Set write position on LCD (upper left is 1,1)        ////
+////                                                                       ////
+////  lcd_getc(x,y)   Returns character at position x,y on LCD             ////
+////                                                                       ////
+////  CONFIGURATION                                                        ////
+////  The LCD can be configured in one of two ways: a.) port access or     ////
+////  b.) pin access.  Port access requires the entire 7 bit interface     ////
+////  connected to one GPIO port, and the data bits (D4:D7 of the LCD)     ////
+////  connected to sequential pins on the GPIO.  Pin access                ////
+////  has no requirements, all 7 bits of the control interface can         ////
+////  can be connected to any GPIO using several ports.                    ////
+////                                                                       ////
+////  To use port access, #define LCD_DATA_PORT to the SFR location of     ////
+////  of the GPIO port that holds the interface, -AND- edit LCD_PIN_MAP    ////
+////  of this file to configure the pin order.  If you are using a         ////
+////  baseline PIC (PCB), then LCD_OUTPUT_MAP and LCD_INPUT_MAP also must  ////
+////  be defined.                                                          ////
+////                                                                       ////
+////  Example of port access:                                              ////
+////     #define LCD_DATA_PORT getenv("SFR:PORTD")                         ////
+////                                                                       ////
+////  To use pin access, the following pins must be defined:               ////
+////     LCD_ENABLE_PIN                                                    ////
+////     LCD_RS_PIN                                                        ////
+////     LCD_RW_PIN                                                        ////
+////     LCD_DATA4                                                         ////
+////     LCD_DATA5                                                         ////
+////     LCD_DATA6                                                         ////
+////     LCD_DATA7                                                         ////
+////                                                                       ////
+////  Example of pin access:                                               ////
+////     #define LCD_ENABLE_PIN  PIN_E0                                    ////
+////     #define LCD_RS_PIN      PIN_E1                                    ////
+////     #define LCD_RW_PIN      PIN_E2                                    ////
+////     #define LCD_DATA4       PIN_D4                                    ////
+////     #define LCD_DATA5       PIN_D5                                    ////
+////     #define LCD_DATA6       PIN_D6                                    ////
+////     #define LCD_DATA7       PIN_D7                                    ////
+////                                                                       ////
+///////////////////////////////////////////////////////////////////////////////
+////        (C) Copyright 2014  Adolfo Emmanuel Sigala Villa           ////
+//// This source code may only be used by licensed users of the CCS C  ////
+//// compiler.  This source code may only be distributed to other      ////
+//// licensed users of the CCS C compiler.  No other use, reproduction ////
+//// or distribution is permitted without written permission.          ////
+//// Derivative programs created using this software in object code    ////
+//// form are not restricted in any way.                               ////
+///////////////////////////////////////////////////////////////////////////
+
 /******************Global definitions********************/
-#define AT "AT+"
-#define CPIN "CPIN?\r\n"
-#define AIPDCONT "AIPDCONT=\"INTERNET.MOVISTAR.MX\",\"MOVISTAR\",\"MOVISTAR\"\r\n"
-#define AIPO "AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1\r\n"
+//#define AT "AT+"
+//#define CPIN "CPIN?\r\n"
+//#define AIPDCONT "AIPDCONT=\"INTERNET.MOVISTAR.MX\",\"MOVISTAR\",\"MOVISTAR\"\r\n"
+//#define AIPO "AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n"
+//#define HOST "HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n"
+
+#define Buzzer_delay	200
+#define Buzzer_On		1
+#define Buzzer_Off      0
 
 /******************Variable and constant definitions*****/
 const char hexcode[17]="0123456789abcdef";
@@ -15,12 +81,12 @@ int16 ptime=100;
 **     their hex codification                           **
 **                                                      **
 *********************************************************/
-void StringToHex(char* Str,unsigned int size,char* result)
+void StringToHex(char* str,unsigned int size,char* result)
 {
 	int index=0,aux=0,aux2=0;
 	for(index=0;index<size;index++)
 		{
-			aux=*(Str+index);
+			aux=*(str+index);
 			aux2=aux/16;
 			*(result+(index*2))=hexcode[aux2];
 			if(aux>15)
@@ -63,9 +129,9 @@ void ReadBuffer(char* buffer)
     }while(index<350 && *(buffer+index-1)!='\r');
 
 	//***Buzzer sound when receive********
-    output_bit(PIN_D9,1);
-	delay_ms(100);
-	output_bit(PIN_D9,0);
+    //output_bit(PIN_D9,Buzzer_On);
+	delay_ms(Buzzer_delay);
+	//output_bit(PIN_D9,Buzzer_Off);
 	OERR=16;
 
 }
@@ -97,7 +163,6 @@ int ValidateCommand(char* cmdstr,int size)
 			result=0;
 		}
 	}
-
     return result;
 }
 
@@ -110,10 +175,8 @@ int GetDecVal(char* arrayval,int16 size,char stch1,char stch2)
 {
 	int16 ind=0;
     int16  value=-1;
-
 	while(ind<size && *(arrayval+ind)!='$')// && value==-1)
 	{
-
 		if(*(arrayval+ind)==stch1 && *(arrayval+(ind+1))==stch2)
 			{
 				ind+=2;
@@ -127,7 +190,6 @@ int GetDecVal(char* arrayval,int16 size,char stch1,char stch2)
 			}
 		ind++;
 	}
-
 	return value;
 }
 
@@ -139,7 +201,6 @@ int GetDecVal(char* arrayval,int16 size,char stch1,char stch2)
 void ConfigureGPRS()
 {
 	int status=0,count=0;
-
 	while(status==0 && count<5)
 		{
 			FillArray(InputBuffer,350,0);  //Clear input_buffer
@@ -153,8 +214,7 @@ void ConfigureGPRS()
 					lcd_putc("\fCMD BAD");
 					status=0;
 				}
-			delay_ms(500);
-	
+			delay_ms(600);
 			if(status==1)
 				{
 					FillArray(InputBuffer,350,0);  //Clear input_buffer
@@ -168,9 +228,8 @@ void ConfigureGPRS()
 							lcd_putc("\fCMD BAD");
 							status=0;
 						}
-					delay_ms(500);
+					delay_ms(600);
 				}		
-
 			if(status==1)
 				{
 					FillArray(InputBuffer,350,0);  //Clear input_buffer
@@ -186,12 +245,11 @@ void ConfigureGPRS()
 						}
 					delay_ms(500);
 				}
-
 			if(status==1)
 				{
 					FillArray(InputBuffer,350,0);  //Clear input_buffer
-					printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server
-					ReadBuffer(InputBuffer);
+					printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server"AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n"
+					ReadBuffer(InputBuffer);																	 
 					PrintBuffer(InputBuffer,1000);
 					status=ValidateCommand(InputBuffer,30);
 					if(status==1) lcd_putc("\fCMD OK");
@@ -206,7 +264,6 @@ void ConfigureGPRS()
 		}
 	//return status;
 }
-
 /***********OpenPort**************************************
 **   Description: Open a TCP port in domain name and    **
 **     specified in dname and rport variables           **
@@ -263,10 +320,7 @@ int ConfigureDatetime(int Id, byte* DateTime)
         InputBuffer[index]=getc();	
 		index++;
     }while(index<350 && InputBuffer[index-1]!='$');
-	//***Close data connection************
-	delay_ms(50);
-	printf("+++\r\n");
-	OERR=16;
+
 	if(ValidateCommand(InputBuffer,index)==1) 
 		{
 			lcd_putc("\fCMD OK");
@@ -285,6 +339,16 @@ int ConfigureDatetime(int Id, byte* DateTime)
 		{
 			status=0;
 		}
+	//***Close data connection************
+	delay_ms(50);
+	printf("+");
+	printf("+");
+	printf("+");
+	OERR=16;
+	ReadBuffer(InputBuffer);
+	//PrintBuffer(InputBuffer,ptime);
+	delay_ms(50);
+	ClosePort(1);
 	return status;
 }
 
@@ -295,7 +359,7 @@ int ConfigureDatetime(int Id, byte* DateTime)
 **  Notes: incoming format:                             **
 **  hr11mn52$ (11:52 a.m)                               **
 *********************************************************/
-void GetSunriseTime(int Id, byte* DateTime)
+void GetOnTime(int Id, byte* DateTime)
 {
 	int16 index=0;
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
@@ -309,7 +373,7 @@ void GetSunriseTime(int Id, byte* DateTime)
 	delay_ms(ptime);
 
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
-	printf("GET /TIMEGPRS/GETSUNRISE/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
+	printf("GET /TIMEGPRS/ONTIME/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
 
     do
     {
@@ -340,7 +404,7 @@ void GetSunriseTime(int Id, byte* DateTime)
 **  Notes: incoming format:                             **
 **  hr11mn52$ (11:52 a.m)                               **
 *********************************************************/
-void GetSunsetTime(int Id, byte* DateTime)
+void GetOffTime(int Id, byte* DateTime)
 {
 	int16 index=0;
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
@@ -354,7 +418,7 @@ void GetSunsetTime(int Id, byte* DateTime)
 	delay_ms(ptime);
 
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
-	printf("GET /TIMEGPRS/GETSUNSET/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
+	printf("GET /TIMEGPRS/OFFTIME/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
     do
     {
         InputBuffer[index]=getc();	
@@ -460,7 +524,6 @@ void GetMode(int Id, int* mod,int state)
 void ReportData(int Id, int state,float curr,float volt)
 {
 	int16 index=0;
-
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
 	printf("AT+AIPA=1\r\n");        //Conect to internet
 	ReadBuffer(InputBuffer);
@@ -538,4 +601,21 @@ void CreateAlert(int Id, int type)
 
 	ClosePort(1);
 }
-
+/***********Read ADC**************************************
+**   Description: Connects to server to obtain the      **
+**     current datetime of the specified device         **
+**                                                      **
+*********************************************************/
+int16 ReadADC(int channel,int delay, int16 samples)
+{
+	int sample=0;
+	int16 measure=0;
+	set_adc_channel(channel);
+	for(sample=0;sample<samples;sample++)	
+	{
+		measure=measure+read_ADC();
+		delay_us(delay);
+	}
+	measure=measure/samples;
+return measure;	
+}
