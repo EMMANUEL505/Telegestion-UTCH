@@ -214,7 +214,7 @@ void ConfigureGPRS()
 					lcd_putc("\fCMD BAD");
 					status=0;
 				}
-			delay_ms(600);
+			delay_ms(100);
 			if(status==1)
 				{
 					FillArray(InputBuffer,350,0);  //Clear input_buffer

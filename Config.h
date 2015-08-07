@@ -25,7 +25,7 @@
 #define RoboEnergia			2
 #define LamparaFundida		3
 
-#define LCD_Delay			2000
+#define LCD_Delay			1000
 
 #define TEMP_ch				0
 #define CURRENT_ch			1

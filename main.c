@@ -29,7 +29,7 @@ void main(void)
 			lcd_putc("\f");
 			lcd_putc("Datetime:\n");
 			printf(lcd_putc,"%d/%d/20%d %02d:%02d",DateTime[day_],DateTime[month_],DateTime[year_],DateTime[hour_],DateTime[min_]);
-			delay_ms(1000);
+			delay_ms(LCD_Delay);
 		break;
 		default:
 			lcd_putc("\fCMD BAD");
@@ -48,7 +48,7 @@ void main(void)
 			//******Get status/mode***********************
 			lcd_putc("\fGetting data\nfrom server.+.");
 			GetMode(Device_Id,&operation_mode,&lamp_statusw);	
-			delay_ms(1500);		
+			delay_ms(LCD_Delay);		
 			switch(operation_mode)
 			{
 				case Timmer_Mode:
@@ -62,6 +62,7 @@ void main(void)
 				break;	
 				case Automated_Mode:
 					GetAutomated(Device_Id,&set_point,&histeresys);
+					delay_ms(300);
 					GetPort(Device_Id,&port_on,&port_off,&port_in);
 					if(S1>set_point+histeresys) lamp_status=port_on;
 					else if(S1<set_point-histeresys) lamp_status=port_off;
@@ -82,12 +83,12 @@ void main(void)
 			rtc_get_date(DateTime[day_],DateTime[month_],DateTime[year_],dow1);
 			rtc_get_time(DateTime[hour_],DateTime[min_],DateTime[sec_]);
 			printf(lcd_putc,"%d/%d/20%d %02d:%02d",DateTime[day_],DateTime[month_],DateTime[year_],DateTime[hour_],DateTime[min_]);
-			delay_ms(2000);
+			delay_ms(LCD_Delay);
 
 			//******Get and show status/mode*******
 			lcd_putc("\f");
 			printf(lcd_putc,"Mode: %d\nStatus: %d",operation_mode,lamp_status);
-			delay_ms(2000);
+			delay_ms(LCD_Delay);
 
 			//******Get and show ADC values***
 			temp=ReadADC(TEMP_ch,100,10);
@@ -108,7 +109,7 @@ void main(void)
 			printf(lcd_putc,"Battery= %6.3fV",battery);
 			delay_ms(LCD_Delay);
 			lcd_putc("\f");
-			printf(lcd_putc,"Current: %6.3fA\nTemperature: %6.3fmV",current,temp);//1.1,1.1);//current,temp);
+			printf(lcd_putc,"Current: %6.3fA",current);//\nTemperature: %6.3fmV",current,temp);//1.1,1.1);//current,temp);
 			delay_ms(LCD_Delay);
 			lcd_putc("\f");
 			printf(lcd_putc,"Reference= \n%6.3fmV",(reference*1000));

@@ -1,9 +1,9 @@
 
-ROM used: 13414 (30%)
-          13414 (30%) including unused fragments
+ROM used: 13346 (30%)
+          13346 (30%) including unused fragments
 
           7 Average locations per line
-          22 Average locations per statement
+          21 Average locations per statement
 
 RAM used: 554 (27%) at main() level
           586 (29%) worst case
@@ -12,14 +12,14 @@ Stack used: 7 worst case (out of 31 total available)
 
 Lines Stmts  %   Files
 ----- ----- ---  -----
-  126    96  15  main.c
+  127    97  16  main.c
    69     0   0  Config.h
   443     0   0  ..\..\..\..\..\Program Files (x86)\PICC\devices\30f5015.h
-  143    53   9  DS1302_2.c
+  143    53   8  DS1302_2.c
   357    83  13  lcd_2.c
   788   391  63  ADH8066.c
 ----- -----
- 1926   623 Total
+ 1927   624 Total
 
 Page ROM  %  RAM   Vol Diff  Functions:
 ---- --- --- ---   --- ----  ----------
@@ -89,7 +89,7 @@ Page ROM  %  RAM   Vol Diff  Functions:
 0     82   0   0             @const311
 0     18   0   0             @const312
 0     56   0  10   297  5.9  ReadADC
-0   2532   9   5  6185 14.3  MAIN
+0   2486   9   5  6205 14.3  MAIN
 0     30   0   0             @const338
 0     24   0   0             @const341
 0    250   1   0             @PRINTFD16_125
@@ -104,18 +104,18 @@ Page ROM  %  RAM   Vol Diff  Functions:
 0    190   1   8             @MULFF
 0     28   0   0             @const373
 0    386   1   0             @PRINTF_F64_125
-0     50   0   0             @const378
+0     28   0   0             @const378
 0     32   0   0             @const380
 0     36   0   0             @const382
 
 Program metrics:
     Functions               33
-    Statements              623
+    Statements              624
     Comments                532
-    Volume (V)              45052
+    Volume (V)              45077
     Difficilty (D)          182.1
-    Effort to implement (E) 8204804
-    Time to implement (T)   126 hours, 37 minutes
+    Effort to implement (E) 8209424
+    Time to implement (T)   126 hours, 41 minutes
     Est Delivered Bugs (B)  14
     Cyclomatic Complexity   61
     Maintainability (MI)    82
@@ -124,7 +124,7 @@ Program metrics:
 -----------  ----  ----
 00000-00002     4  0  
 00004-000FE   252  0  
-00100-0AFFE  13158  31642  
+00100-0AFFE  13090  31710  
 
 
 
