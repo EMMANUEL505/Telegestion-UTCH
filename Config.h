@@ -21,9 +21,9 @@
 #define min_             4
 #define sec_             5
 
-#define RoboCable			0
-#define RoboEnergia			1
-#define LamparaFundida		2
+#define RoboCable			1
+#define RoboEnergia			2
+#define LamparaFundida		3
 
 #define LCD_Delay			2000
 
@@ -42,10 +42,10 @@
 #include "ADH8066.c"
 
 /******************Global variables***********************/
-int operation_mode=0,lamp_status=1,lamp_statusw=1,alert_status=0;//,alert_type;
-//int port_status=0,port_statusw=0; //New variables used in new operation mode
+int operation_mode=0,lamp_status=0,lamp_statusw=0,alert_status=0;//,alert_type;
+int port_on=0,port_off=0,port_in=0; //New variables used in new operation mode
 int lamp1=0,lamp2=0;
-//int set_point=0,histeresys=0;
+int set_point=0,histeresys=0;
 int16 Device_Id=21,loops=0;
 
 float current=0,battery=0,temp=0,s1=0,s2=0,reference=0;

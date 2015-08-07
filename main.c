@@ -17,7 +17,7 @@ void main(void)
 	//******Clear RS232 error**********
 	OERR=16;
 	//******Configure GPRS device******
-	ConfigureGPRS();
+	ConfigureGPRS();	
 	//******Set datetime*****************
 	switch(ConfigureDatetime(Device_Id, DateTime))
 	{
@@ -40,7 +40,7 @@ void main(void)
 	//***While loop, main program starts here***
 	while(TRUE)
 	{//*****Start of while loop**************       
-		for(loops=0;loops<4;loops++)
+		for(loops=0;loops<2;loops++)
 		{//*****Start of for loop**************
 			//**********BUZZER********************
 			output_bit(PIN_D9,alert_status);  //BUZZER depend of alert state
@@ -54,17 +54,23 @@ void main(void)
 				case Timmer_Mode:
 					GetOnTime(Device_Id,OnTime);
 					GetOffTime(Device_Id,OffTime);
-					if(DateTime[hour_]==OnTime[hour_]&&((DateTime[min_]>=OnTime[min_])&&(DateTime[min_]<=(OnTime[min_]+1)))) lamp_status=1;
-					if(DateTime[hour_]==OffTime[hour_]&&((DateTime[min_]>=OffTime[min_])&&(DateTime[min_]<=(OffTime[min_]+1)))) lamp_status=0;
-					lamp1= lamp_status; lamp2=lamp_status;
+					GetPort(Device_Id,&port_on,&port_off,&port_in);
+					if(DateTime[hour_]==OnTime[hour_]&&((DateTime[min_]>=(OnTime[min_]-1))&&(DateTime[min_]<=(OnTime[min_]+1)))) lamp_status=port_on;
+					else if(DateTime[hour_]==OffTime[hour_]&&((DateTime[min_]>=(OffTime[min_]-1))&&(DateTime[min_]<=(OffTime[min_]+1)))) lamp_status=port_off;
+					//else lamp_status=0;
+					lamp1= (lamp_status&0x01); lamp2=(lamp_status&0x02)>>1;
 				break;	
 				case Automated_Mode:
-					//if(S1>set_point+histeresys) lamp_status=0;
-					//if(S1<set_point-histeresys) lamp_status=1;
+					GetAutomated(Device_Id,&set_point,&histeresys);
+					GetPort(Device_Id,&port_on,&port_off,&port_in);
+					if(S1>set_point+histeresys) lamp_status=port_on;
+					else if(S1<set_point-histeresys) lamp_status=port_off;
+					else if((S1<set_point+0.9)&&(S1>set_point-0.9)) lamp_status=port_off;	
+					lamp1= (lamp_status&0x01); lamp2=(lamp_status&0x02)>>1;				
 				break;	
 				case Manual_Mode:
 					lamp_status=lamp_statusw;
-					lamp1= lamp_status; lamp2=lamp_status;
+					lamp1= (lamp_status&0x01); lamp2=(lamp_status&0x02)>>1;
 				break;	
 				default:
 				break;
@@ -93,27 +99,27 @@ void main(void)
 
 			reference=0.412/reference;
 			temp=(temp*reference)*1000;
-			current=(current*reference)*1000;
+			current=(current*reference)*8;
 			battery=(battery*reference)*3.11;	
 			s1=s1*reference/.165; 	//165 Ohms resitor in serie with sensor, (v/165)*1000 (in mA)
 			s2=s2*reference/.165;	//165 Ohms resitor in serie with sensor, (v/165)*1000 (in mA)
 
 			lcd_putc("\f");
-			printf(lcd_putc,"Battery= %6.3fv",battery);
+			printf(lcd_putc,"Battery= %6.3fV",battery);
 			delay_ms(LCD_Delay);
 			lcd_putc("\f");
-			printf(lcd_putc,"Current: %6.3fmV\nTemperature: %6.3fmV",current,temp);//1.1,1.1);//current,temp);
+			printf(lcd_putc,"Current: %6.3fA\nTemperature: %6.3fmV",current,temp);//1.1,1.1);//current,temp);
 			delay_ms(LCD_Delay);
 			lcd_putc("\f");
-			printf(lcd_putc,"Reference= %6.3f",reference);
+			printf(lcd_putc,"Reference= \n%6.3fmV",(reference*1000));
 			delay_ms(LCD_Delay);
 			lcd_putc("\f");
 			printf(lcd_putc,"S1: %6.3fmA\nS2: %6.3fmA",s1,s2);
 			delay_ms(LCD_Delay);
 
-			if(battery<6.3) alert_status=1;
+			if(battery<6.3) {alert_status=1; CreateAlert(Device_Id,2);}
 			else alert_status=0;
 		}//*****End of for loop**************
-		ReportData(Device_Id,lamp_status,(current+100),(battery+100));//1,1.1,1.1);
+		ReportData(Device_Id,lamp_status);//1,1.1,1.1);
 	}//*****End of while loop**************
 }

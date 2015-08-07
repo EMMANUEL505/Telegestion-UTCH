@@ -1,212 +1,247 @@
 W0      @SCRATCH
 W0L     _RETURN_
-W0 -W1  @READ_PROGRAM_MEMORY.P1
-W0      @PRINTFD16_115200_5891_5890.P2
-W0 -W3  @F64TOI64.P3
-W0 -W2  @F48TO64.P4
+W0 -W3  @FLT64.P1
+W0 -W1  @READ_PROGRAM_MEMORY.P2
+W0 -W3  @PRINTF_F64_115200_5891_5890.P3
+W0 -W1  @MULFF.P4
 W0 -W1  @DIV3232B.P5
-W0 -W3  @PRINTF_F64_115200_5891_5890.P6
-W0 -W3  @PRINTF_F64_125.P7
-W0 -W1  @DIVFF.P8
-W0      @delay_ms1.P9
-W0 -W3  @MULFF64.P10
-W0      @delay_us1.P11
-W0 -W1  @MULFF.P12
-W0      @SITOF.P13
-W0 -W3  @DIV6464B.P14
-W0 -W1  @ADDFF.P15
-W0 -W1  @FLT.P16
-W0      @PRINTFD16_125.P17
+W0      @PRINTFD16_125.P6
+W0 -W1  @DIVFF.P7
+W0      @delay_ms1.P8
+W0 -W3  @F64TOI64.P9
+W0      @SITOF.P10
+W0      @PRINTFD16_115200_5891_5890.P11
+W0 -W1  @FLT.P12
+W0 -W3  @SI64TOF64.P13
+W0 -W3  @PRINTF_F64_125.P14
+W0 -W3  @ADDFF64.P15
+W0      @delay_us1.P16
+W0 -W2  @F48TO64.P17
+W0 -W3  @MULFF64.P18
+W0 -W3  @DIV6464B.P19
 W1      @SCRATCH
-W1      @READ_PACKED_MEMORY.P1
-W1      @WRITE_PACKED_MEMORY.P2
-W2      @READ_PACKED_MEMORY.P1
-W2      @READ_PROGRAM_MEMORY.P2
-W2 -W3  @MULFF.P3
-W2 -W3  @FLT.P4
-W2      @WRITE_PACKED_MEMORY.P5
+W1      @WRITE_PACKED_MEMORY.P1
+W1      @READ_PACKED_MEMORY.P2
+W2 -W3  @FLT.P1
+W2 -W3  @DIVFF.P2
+W2      @WRITE_PACKED_MEMORY.P3
+W2 -W3  @MULFF.P4
+W2      @READ_PROGRAM_MEMORY.P5
 W2 -W3  @DIV3232B.P6
-W2 -W3  @DIVFF.P7
-W2 -W3  @ADDFF.P8
+W2      @READ_PACKED_MEMORY.P7
 W3      @READ_PACKED_MEMORY.P1
-W3      @WRITE_PACKED_MEMORY.P2
-W3      @READ_PROGRAM_MEMORY.P3
-W4 -W7  @DIV6464B.P1
-W4      @PRINTFD16_125.P2
-W4 -W7  @MULFF64.P3
-W4      @PRINTFD16_115200_5891_5890.P4
+W3      @READ_PROGRAM_MEMORY.P2
+W3      @WRITE_PACKED_MEMORY.P3
+W4 -W7  @ADDFF64.P1
+W4 -W7  @FLT64.P2
+W4      @PRINTFD16_125.P3
+W4 -W7  @DIV6464B.P4
+W4      @PRINTFD16_115200_5891_5890.P5
+W4 -W7  @MULFF64.P6
 W9 -W10 @PRINTF_F64_115200_5891_5890.P1
 W9 -W10 @PRINTF_F64_125.P2
 20E     OERR
-800-95D InputBuffer
-95E-95F ptime
-960-961 operation_mode
-962-963 lamp_status
-964-965 lamp_statusw
-966-967 alert_status
-968-969 lamp1
-96A-96B lamp2
-96C-96D Device_Id
-96E-96F loops
-970-973 current
-974-977 battery
-978-97B temp
-97C-97F s1
-980-983 s2
-984-987 reference
-988-98D DateTime
-98E     dow1
-990-995 OnTime
-996-99B OffTime
-99C     lcd_init.i
-99C-99D GetMode.Id
-99C-99D ReadADC.channel
-99C-99D ConfigureDatetime.Id
-99C     rtc_set_datetime.day
-99C-99D GetOnTime.Id
-99C     rtc_init.x
-99C-99D ConfigureGPRS.status
-99C-99D GetOffTime.Id
-99D     rtc_set_datetime.mth
-99E-99F ConfigureGPRS.count
-99E-99F ReadADC.delay
-99E-99F ConfigureDatetime.DateTime
-99E-99F GetOnTime.DateTime
-99E-99F GetMode.mod
-99E-99F GetOffTime.DateTime
-99E     rtc_set_datetime.year
-99F     rtc_set_datetime.dow
-9A0     rtc_set_datetime.hr
-9A0-9A1 ReadADC.samples
-9A0     read_ds1302.cmd
-9A0-9A1 GetOffTime.index
-9A0-9A1 PrintBuffer.buffer
-9A0-9A1 ConfigureDatetime.status
-9A0-9A1 GetOnTime.index
-9A0-9A1 GetMode.state
-9A1     read_ds1302.i
-9A1     rtc_set_datetime.min
-9A2     read_ds1302.data
-9A2-9A3 ReadADC.sample
-9A2-9A3 PrintBuffer.permanency
-9A2-9A3 GetMode.status
-9A2-9A3 ConfigureDatetime.index
-9A2     rm_bcd.data
-9A3     rm_bcd.i
-9A4-9A5 GetMode.index
-9A4-9A5 ReadADC.measure
+800-803 current
+804-807 battery
+808-80B temp
+80C-80F s1
+810-813 s2
+814-817 reference
+818-975 InputBuffer
+976-977 ptime
+978-979 operation_mode
+97A-97B lamp_status
+97C-97D lamp_statusw
+97E-97F alert_status
+980-981 port_on
+982-983 port_off
+984-985 port_in
+986-987 lamp1
+988-989 lamp2
+98A-98B set_point
+98C-98D histeresys
+98E-98F Device_Id
+990-991 loops
+992-997 DateTime
+998     dow1
+99A-99F OnTime
+9A0-9A5 OffTime
+9A6-9A7 GetPort.Id
+9A6-9A7 GetAutomated.Id
+9A6-9A7 ConfigureGPRS.status
 9A6-9A7 ReportData.Id
-9A8-9A9 ReportData.state
-9A8     get_bcd.data
-9A9     get_bcd.nibh
-9AA-9AD ReportData.curr
-9AA     get_bcd.nibl
-9AA     write_ds1302.cmd
-9AB     write_ds1302.data
-9AC     lcd_putc.c
-9AC-9AD ValidateCommand.cmdstr
-9AE-9AF ValidateCommand.size
-9AE     write_ds1302_byte.cmd
-9AE     lcd_gotoxy.x
-9AE-9B1 ReportData.volt
-9AF     write_ds1302_byte.i
-9AF     lcd_gotoxy.y
-9B0     lcd_gotoxy.address
-9B0-9B1 ValidateCommand.index
-9B0-9B1 GetDecVal.arrayval
-9B2-9B3 ReportData.index
-9B2-9B3 GetDecVal.size
-9B2-9B3 ValidateCommand.result
-9B4     GetDecVal.stch1
-9B4     lcd_send_byte.address
-9B5     lcd_send_byte.n
-9B5     GetDecVal.stch2
-9B6-9B7 GetDecVal.ind
-9B8-9B9 GetDecVal.value
-9B8     lcd_read_byte.low
-9B9     lcd_read_byte.high
-9BA     lcd_send_nibble.n
-9BA     lcd_read_nibble.n
-9C0-9C1 ClosePort.socket
-9C4-9C5 ReadBuffer.buffer
-9C4-9C5 FillArray.arrayval
-9C6-9C7 FillArray.size
-9C6-9C7 ReadBuffer.index
-9C8     FillArray.val
-9CA-9CB FillArray.index
+9A6     rtc_init.x
+9A6-9A7 ReadADC.channel
+9A6     lcd_init.i
+9A6-9A7 CreateAlert.Id
+9A6-9A7 GetMode.Id
+9A6-9A7 GetOnTime.Id
+9A6-9A7 ConfigureDatetime.Id
+9A6     rtc_set_datetime.day
+9A6-9A7 GetOffTime.Id
+9A7     rtc_set_datetime.mth
+9A8     rtc_set_datetime.year
+9A8-9A9 ConfigureGPRS.count
+9A8-9A9 ReadADC.delay
+9A8-9A9 GetOnTime.DateTime
+9A8-9A9 GetPort.porton
+9A8-9A9 GetOffTime.DateTime
+9A8-9A9 CreateAlert.type
+9A8-9A9 ConfigureDatetime.DateTime
+9A8-9A9 ReportData.status
+9A8-9A9 GetAutomated.setpoint
+9A8-9A9 GetMode.mod
+9A9     rtc_set_datetime.dow
+9AA     rtc_set_datetime.hr
+9AA-9AB CreateAlert.index
+9AA-9AB ConfigureDatetime.status
+9AA-9AB ReadADC.samples
+9AA-9AB GetMode.state
+9AA-9AB GetOnTime.index
+9AA-9AB GetPort.portoff
+9AA-9AB GetOffTime.index
+9AA-9AB ReportData.index
+9AA-9AB GetAutomated.histeresys
+9AA     read_ds1302.cmd
+9AB     read_ds1302.i
+9AB     rtc_set_datetime.min
+9AC-9AD GetMode.status
+9AC-9AD ConfigureDatetime.index
+9AC     read_ds1302.data
+9AC-9AD GetAutomated.status
+9AC-9AD ReadADC.sample
+9AC-9AD GetPort.portin
+9AC     rm_bcd.data
+9AD     rm_bcd.i
+9AE-9AF GetMode.index
+9AE-9AF GetPort.status
+9AE-9AF ReadADC.measure
+9AE-9AF GetAutomated.index
+9B0-9B1 PrintBuffer.buffer
+9B0-9B1 GetPort.index
+9B2-9B3 PrintBuffer.permanency
+9B2     get_bcd.data
+9B3     get_bcd.nibh
+9B4     get_bcd.nibl
+9B4     write_ds1302.cmd
+9B5     write_ds1302.data
+9B8     write_ds1302_byte.cmd
+9B9     write_ds1302_byte.i
+9BA-9BB ClosePort.socket
+9BA-9BB ValidateCommand.cmdstr
+9BC-9BD ValidateCommand.size
+9BC     lcd_putc.c
+9BE-9BF FillArray.arrayval
+9BE     lcd_gotoxy.x
+9BE-9BF GetDecVal.arrayval
+9BE-9BF ReadBuffer.buffer
+9BE-9BF ValidateCommand.index
+9BF     lcd_gotoxy.y
+9C0     lcd_gotoxy.address
+9C0-9C1 GetDecVal.size
+9C0-9C1 FillArray.size
+9C0-9C1 ValidateCommand.result
+9C0-9C1 ReadBuffer.index
+9C2     GetDecVal.stch1
+9C2     FillArray.val
+9C3     GetDecVal.stch2
+9C4     lcd_send_byte.address
+9C4-9C5 GetDecVal.ind
+9C4-9C5 FillArray.index
+9C5     lcd_send_byte.n
+9C6-9C7 GetDecVal.value
+9C8     lcd_read_byte.low
+9C9     lcd_read_byte.high
+9CA     lcd_read_nibble.n
+9CA     lcd_send_nibble.n
 F80-FFF Stack
 
 ROM Allocation:
-050A  @delay_ms1
-151C  @delay_us1
-06B8  write_ds1302_byte
-06DE  write_ds1302
-06F8  read_ds1302
-0740  rtc_init
-0E68  get_bcd
-14F6  rm_bcd
-0E8C  rtc_set_datetime
-2446  rtc_get_date
-249E  rtc_get_time
+074E  @delay_ms1
+1F88  @delay_us1
+08FC  write_ds1302_byte
+0922  write_ds1302
+093C  read_ds1302
+0984  rtc_init
+10AC  get_bcd
+1F62  rm_bcd
+10D0  rtc_set_datetime
+2FC6  rtc_get_date
+301E  rtc_get_time
 0100  LCD_INIT_STRING
-0598  lcd_read_byte
-055E  lcd_read_nibble
-051A  lcd_send_nibble
-05E8  lcd_send_byte
-063C  lcd_init
-0784  lcd_gotoxy
-07AE  lcd_putc
-07FA  FillArray
-081A  ReadBuffer
-0860  PrintBuffer
-0110  @const153
-089A  ValidateCommand
-0C20  GetDecVal
-08D4  ConfigureGPRS
-011E  @const170
-0136  @const171
-014A  @const172
-0160  @const173
-01A4  @const176
-01BC  @const179
-0B26  @PRINTFD16_115200_5891_5890
-0C96  ClosePort
-01FA  @const196
-0CE0  ConfigureDatetime
-0214  @const202
-1228  GetOnTime
-0260  @const213
-138C  GetOffTime
-02AA  @const223
-1024  GetMode
-02F6  @const235
-0342  @const236
-1E82  ReportData
-0390  @const248
-1738  @F48TO64
-177E  @MULFF64
-188C  @F64TOI64
-18E2  @DIV6464B
-1D00  @PRINTF_F64_115200_5891_5890
-152E  ReadADC
-2028  MAIN
-03FA  @const303
-0418  @const306
-0F2A  @PRINTFD16_125
-010C  @const311
-0430  @const312
-045A  @const317
-1566  @SITOF
-15B0  @DIVFF
-167A  @MULFF
-047A  @const327
-1976  @PRINTF_F64_125
-0496  @const332
-04C8  @const334
-04E6  @const336
-1AF8  @FLT
-1B60  @ADDFF
-2028  @cinit
+07DC  lcd_read_byte
+07A2  lcd_read_nibble
+075E  lcd_send_nibble
+082C  lcd_send_byte
+0880  lcd_init
+09C8  lcd_gotoxy
+09F2  lcd_putc
+0A3E  FillArray
+0A5E  ReadBuffer
+0AA4  PrintBuffer
+0110  @const159
+0ADE  ValidateCommand
+0E64  GetDecVal
+0B18  ConfigureGPRS
+011E  @const176
+0136  @const177
+014A  @const178
+0160  @const179
+01A4  @const182
+01BC  @const185
+0D6A  @PRINTFD16_115200_5891_5890
+0EDA  ClosePort
+01FA  @const202
+0F24  ConfigureDatetime
+0214  @const208
+146C  GetOnTime
+0260  @const219
+15D0  GetOffTime
+02AA  @const229
+1268  GetMode
+02F6  @const241
+0342  @const242
+19E8  GetAutomated
+0390  @const254
+03E0  @const255
+173A  GetPort
+042C  @const268
+047A  @const269
+04C8  @const270
+2884  ReportData
+0516  @const280
+0550  @const281
+215A  @F48TO64
+21A0  @MULFF64
+22AE  @F64TOI64
+2304  @DIV6464B
+2702  @PRINTF_F64_115200_5891_5890
+0568  @const295
+0582  @const296
+0598  @const297
+251A  CreateAlert
+05D8  @const311
+062A  @const312
+1F9A  ReadADC
+2A82  MAIN
+063C  @const338
+065A  @const341
+116E  @PRINTFD16_125
+0672  @const347
+1BEC  @SITOF
+1C36  @FLT
+1C9E  @SI64TOF64
+1D02  @ADDFF64
+1EDE  @FLT64
+069C  @const365
+1FD2  @DIVFF
+209C  @MULFF
+06BC  @const373
+2398  @PRINTF_F64_125
+06D8  @const378
+070A  @const380
+072A  @const382
+2A82  @cinit
 
 
 User Memory space: 

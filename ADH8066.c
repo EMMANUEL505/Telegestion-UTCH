@@ -69,7 +69,7 @@
 #define Buzzer_delay	200
 #define Buzzer_On		1
 #define Buzzer_Off      0
-
+extern float current,battery,temp,s1,s2,reference;
 /******************Variable and constant definitions*****/
 const char hexcode[17]="0123456789abcdef";
 
@@ -516,12 +516,174 @@ void GetMode(int Id, int* mod,int state)
 	ClosePort(1);
 }
 
+/***********GetAutomated***************************************
+**   Description: Connects to server to obtain the      **
+**     current datetime of the specified device         **
+**                                                      **
+*********************************************************/
+void GetAutomated(int Id, int* setpoint,int* histeresys)
+{
+	int status=0;
+	int16 index=0;
+
+	FillArray(InputBuffer,350,0);  //Clear input_buffer
+	printf("AT+AIPA=1\r\n");        //Conect to internet
+	ReadBuffer(InputBuffer);
+	//PrintBuffer(InputBuffer,ptime);
+	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK");
+	//else lcd_putc("\fCMD BAD");
+	delay_ms(ptime);
+
+	FillArray(InputBuffer,350,0);  //Clear input_buffer
+	printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server
+	ReadBuffer(InputBuffer);
+	//PrintBuffer(InputBuffer,ptime);
+	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK");
+	//else lcd_putc("\fCMD BAD");
+	delay_ms(ptime);
+
+	//**************GET REQUEST TO OBTAIN MODE****************
+	FillArray(InputBuffer,350,0);  //Clear input_buffer
+	printf("GET /DEVICEGPRS/GETSETPOINT/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
+	while(getc()!='\n');
+	do
+	{
+		InputBuffer[index]=getc();
+		index++;
+	}while(index<350 && InputBuffer[index-1]!='$');
+
+	OERR=16;
+	//PrintBuffer(InputBuffer,ptime);
+
+	if(ValidateCommand(InputBuffer,index)==1) 
+		{
+			*setpoint=(int)GetDecVal(InputBuffer,index,'s','t');
+			status=1;
+		}
+
+	//**************GET REQUEST TO OBTAIN STATUS**************
+	FillArray(InputBuffer,350,0);  //Clear input_buffer
+	index=0;
+	printf("GET /DEVICEGPRS/GETHIST/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
+	while(getc()!='\n');
+	do
+	{
+		InputBuffer[index]=getc();
+		index++;
+	}while(index<350 && InputBuffer[index-1]!='$');
+
+	if(ValidateCommand(InputBuffer,index)==1) 
+		{
+			*histeresys=(int)GetDecVal(InputBuffer,index,'s','t');
+			status=1;
+		}
+
+	//***Close data connection************
+	delay_ms(50);
+	printf("+");
+	printf("+");
+	printf("+");
+	OERR=16;
+	ReadBuffer(InputBuffer);
+	//PrintBuffer(InputBuffer,ptime);
+	delay_ms(50);
+	ClosePort(1);
+}
+/***********GetPort***************************************
+**   Description: Connects to server to obtain the      **
+**     current datetime of the specified device         **
+**                                                      **
+*********************************************************/
+void GetPort(int Id, int* porton,int* portoff,int* portin)
+{
+	int status=0;
+	int16 index=0;
+
+	FillArray(InputBuffer,350,0);  //Clear input_buffer
+	printf("AT+AIPA=1\r\n");        //Conect to internet
+	ReadBuffer(InputBuffer);
+	//PrintBuffer(InputBuffer,ptime);
+	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK");
+	//else lcd_putc("\fCMD BAD");
+	delay_ms(ptime);
+
+	FillArray(InputBuffer,350,0);  //Clear input_buffer
+	printf("AT+AIPO=1,,\"www.serverdeus.somee.com\",80,0,,1,2\r\n");  //Conect to server
+	ReadBuffer(InputBuffer);
+	//PrintBuffer(InputBuffer,ptime);
+	//if(ValidateCommand(InputBuffer,30)==1) lcd_putc("\fCMD OK");
+	//else lcd_putc("\fCMD BAD");
+	delay_ms(ptime);
+
+	//**************GET REQUEST TO OBTAIN MODE****************
+	FillArray(InputBuffer,350,0);  //Clear input_buffer
+	printf("GET /DEVICEGPRS/GETPORTON/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
+	while(getc()!='\n');
+	do
+	{
+		InputBuffer[index]=getc();
+		index++;
+	}while(index<350 && InputBuffer[index-1]!='$');
+
+	OERR=16;
+	//PrintBuffer(InputBuffer,ptime);
+
+	if(ValidateCommand(InputBuffer,index)==1) 
+		{
+			*porton=(int)GetDecVal(InputBuffer,index,'s','t');
+			status=1;
+		}
+
+	//**************GET REQUEST TO OBTAIN STATUS**************
+	FillArray(InputBuffer,350,0);  //Clear input_buffer
+	index=0;
+	printf("GET /DEVICEGPRS/GETPORTOFF/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
+	while(getc()!='\n');
+	do
+	{
+		InputBuffer[index]=getc();
+		index++;
+	}while(index<350 && InputBuffer[index-1]!='$');
+
+	if(ValidateCommand(InputBuffer,index)==1) 
+		{
+			*portoff=(int)GetDecVal(InputBuffer,index,'s','t');
+			status=1;
+		}
+	//**************GET REQUEST TO OBTAIN STATUS**************
+	FillArray(InputBuffer,350,0);  //Clear input_buffer
+	index=0;
+	printf("GET /DEVICEGPRS/GETPORTIN/%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id);
+	while(getc()!='\n');
+	do
+	{
+		InputBuffer[index]=getc();
+		index++;
+	}while(index<350 && InputBuffer[index-1]!='$');
+
+	if(ValidateCommand(InputBuffer,index)==1) 
+		{
+			*portin=(int)GetDecVal(InputBuffer,index,'s','t');
+			status=1;
+		}
+	//***Close data connection************
+	delay_ms(50);
+	printf("+");
+	printf("+");
+	printf("+");
+	OERR=16;
+	ReadBuffer(InputBuffer);
+	//PrintBuffer(InputBuffer,ptime);
+	delay_ms(50);
+	ClosePort(1);
+}
 /***********ReportData************************************
 **   Description: Connects to server to report the      **
 **     current consuptions of current and voltage       **
 **                                                      **
 *********************************************************/
-void ReportData(int Id, int state,float curr,float volt)
+
+void ReportData(int Id, int status)
 {
 	int16 index=0;
 	FillArray(InputBuffer,350,0);  //Clear input_buffer
@@ -536,7 +698,11 @@ void ReportData(int Id, int state,float curr,float volt)
 
 	//**************GET REQUEST TO OBTAIN MODE****************
 	FillArray(InputBuffer,350,0);  //Clear input_buffer /monitoringgprs/create?id=14&status=0&current=1&voltage=2
-	printf("GET /MONITORINGGPRS/CREATE?ID=%d&STATUS=%d&CURRENT=%6.3f&VOLTAGE=%6.3f HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id,state,curr,volt);
+	printf("GET /MONITORINGGPRS/CREATE2?ID=%d&STATUS=%d",Id,status);
+	printf("&CURRENT=%f",current);
+	printf("&VOLTAGE=%.2f",battery);
+	printf("&VAR1=%f",s1);
+	printf("&VAR2=%f HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",s2);
 		//printf("GET /MONITORINGGPRS/CREATE?ID=9&STATUS=1&CURRENT=6&VOLTAGE=6 HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n");
 	while(getc()!='\n');
 	do
@@ -584,7 +750,7 @@ void CreateAlert(int Id, int type)
 
 	//**************GET REQUEST TO OBTAIN MODE****************
 	FillArray(InputBuffer,350,0);  //Clear input_buffer /monitoringgprs/create?id=14&status=0&current=1&voltage=2
-	printf("GET /ALERTGGPRS/CREATE?ID=%d&TYPE=%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id,type);
+	printf("GET /ALERTGPRS/CREATE?ID=%d&TYPE=%d HTTP/1.1\r\nHost: www.serverdeus.somee.com\r\n\r\n",Id,type);
 	while(getc()!='\n');
 	do
 	{
